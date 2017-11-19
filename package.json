@@ -1,0 +1,35 @@
+{
+  "name": "yaml-crypt",
+  "version": "0.0.1",
+  "description": "Encrypt and decrypt YAML documents",
+  "license": "MIT",
+  "author": "Pascal",
+  "homepage": "https://github.com/pascalgn/yaml-crypt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pascalgn/yaml-crypt.git"
+  },
+  "main": "./lib/yaml-crypt.js",
+  "bin": {
+    "yaml-crypt": "./bin/yaml-crypt-cli.js"
+  },
+  "dependencies": {
+    "argparse": "^1.0.7",
+    "bytebuffer": "^5.0.1",
+    "crypto-js": "^3.1.9-1",
+    "fernet": "^0.3.1",
+    "js-yaml": "^3.9.1",
+    "pbkdf2": "^3.0.14",
+    "pkginfo": "^0.4.1",
+    "urlsafe-base64": "^1.0.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "mocha --recursive"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "eslint": "^4.10.0",
+    "mocha": "^4.0.1"
+  }
+}
