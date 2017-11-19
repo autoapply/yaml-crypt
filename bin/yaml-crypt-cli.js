@@ -157,7 +157,7 @@ function run(argv, config = {}, options = {}) {
             keys.push(...args.key.map(key => readKey(key)));
         }
         if (config.defaultKeyFile) {
-            keys.append(readKey(config.defaultKeyFile));
+            keys.push(readKey(config.defaultKeyFile));
         }
         if (args.file) {
             for (const file of args.file) {
@@ -174,7 +174,7 @@ function run(argv, config = {}, options = {}) {
                                     return plaintextFile(f) || encryptedFile(f);
                                 }
                             })
-                            .forEach(f => processFile(f, keys, args, options));
+                            .forEach(f => processFile(file + '/' + f, keys, args, options));
                     } else {
                         throw new UsageError(`directories will be skipped unless --dir given: ${file}`);
                     }
@@ -249,7 +249,7 @@ function processFile(file, keys, args) {
     if (encrypt) {
         const crypt = yamlcrypt.encrypt(keys[0]);
         yaml.safeLoadAll(content, obj => {
-            processStrings(obj, str => yamlcrypt.plaintext(str));
+            processStrings(obj, args.path, str => yamlcrypt.plaintext(str));
             const encrypted = crypt.safeDump(obj);
             strs.push(encrypted);
         });
@@ -263,14 +263,27 @@ function processFile(file, keys, args) {
     }
 }
 
-function processStrings(obj, callback) {
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const value = obj[key];
+function processStrings(obj, path, callback) {
+    let subobj = obj;
+    if (path) {
+        const parts = path.split('.');
+        for (let idx = 0; idx < parts.length; idx++) {
+            const part = parts[idx];
+            if (idx === parts.length - 1 && typeof subobj[part] === 'string') {
+                subobj[part] = callback(subobj[part]);
+                return;
+            } else {
+                subobj = subobj[part];
+            }
+        }
+    }
+    for (const key in subobj) {
+        if (subobj.hasOwnProperty(key)) {
+            const value = subobj[key];
             if (typeof value === 'string') {
-                obj[key] = callback(value);
+                subobj[key] = callback(value);
             } else if (typeof value === 'object') {
-                processStrings(value, callback);
+                processStrings(value, null, callback);
             }
         }
     }

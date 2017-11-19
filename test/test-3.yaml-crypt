@@ -1,0 +1,5 @@
+a:
+  b:
+    c: !<!yaml-crypt/fernet:128> >-
+      gAAAAAAAAAABAAECAwQFBgcICQoLDA0ODxwF4kD5PwYVPv70wJaVzzcHQW-05aGCmKbqm5Xr_JU-zzrnTJPuTgugtPGENImYqA==
+x: plain
