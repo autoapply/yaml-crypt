@@ -11,7 +11,7 @@ const yamlcrypt = require('../lib/yaml-crypt');
 require('./crypto-util').setupFernet();
 
 describe('yaml-crypt', () => it('decrypt() should read the decrypted content', () => {
-    const yaml = yamlcrypt.decrypt('aehae5Ui0Eechaeghau9Yoh9jufiep7H');
+    const yaml = yamlcrypt.decrypt(['aehae5Ui0Eechaeghau9Yoh9jufiep7H']);
     const content = fs.readFileSync('./test/test-1.yaml-crypt');
     const result = yaml.safeLoad(content);
     expect(result.key1.toString()).to.equal('Hello, world!');

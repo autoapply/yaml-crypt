@@ -15,13 +15,11 @@
   },
   "dependencies": {
     "argparse": "^1.0.7",
-    "bytebuffer": "^5.0.1",
-    "crypto-js": "^3.1.9-1",
     "fernet": "^0.3.1",
     "js-yaml": "^3.9.1",
-    "pbkdf2": "^3.0.14",
     "pkginfo": "^0.4.1",
-    "urlsafe-base64": "^1.0.0"
+    "urlsafe-base64": "^1.0.0",
+    "write-file-atomic": "^2.3.0"
   },
   "scripts": {
     "lint": "eslint .",
@@ -30,6 +28,7 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "eslint": "^4.10.0",
-    "mocha": "^4.0.1"
+    "mocha": "^4.0.1",
+    "tmp": "^0.0.33"
   }
 }
