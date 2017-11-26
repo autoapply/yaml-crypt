@@ -13,6 +13,7 @@
   "rules": {
     "semi": "error",
     "no-tabs": "error",
-    "no-console": "off"
+    "no-console": "off",
+    "no-constant-condition": "off"
   }
 }

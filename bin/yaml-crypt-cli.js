@@ -112,7 +112,11 @@ function run(argv, config = {}, options = {}) {
     parser.addArgument(['-k', '--key'], {
         action: 'append',
         metavar: '<key-file>',
-        help: 'Key files to use. Can be given multiple times for decryption to automatically select a matching key'
+        help: 'Key files to use. Can be given multiple times to automatically select a matching decryption key'
+    });
+    parser.addArgument(['-B', '--base64'], {
+        action: 'storeTrue',
+        help: 'Encode/decode values using Base64 encoding before processing'
     });
     parser.addArgument(['--path'], {
         metavar: '<yaml-path>',
@@ -142,47 +146,17 @@ function run(argv, config = {}, options = {}) {
     if (args.raw && args.path) {
         throw new UsageError('options --raw and --path cannot be combined!');
     }
-    if (args.raw && args.file) {
+    if (args.raw && args.file.length) {
         throw new UsageError('no files may be given when --raw is used!');
     }
     if (!args.key && !config.defaultKeyFile) {
         throw new UsageError('no key file given and no default key file configured!');
     }
-    if (args.rm && !args.file) {
+    if (args.rm && !args.file.length) {
         throw new UsageError('option --rm used, but no files given!');
     }
     try {
-        const keys = [];
-        if (args.key) {
-            keys.push(...args.key.map(key => readKey(key)));
-        }
-        if (config.defaultKeyFile) {
-            keys.push(readKey(config.defaultKeyFile));
-        }
-        if (args.file) {
-            for (const file of args.file) {
-                const stat = fs.statSync(file);
-                if (stat.isDirectory()) {
-                    if (args.dir) {
-                        fs.readdirSync(file)
-                            .filter(f => {
-                                if (args.encrypt) {
-                                    return plaintextFile(f);
-                                } else if (args.decrypt) {
-                                    return encryptedFile(f);
-                                } else {
-                                    return plaintextFile(f) || encryptedFile(f);
-                                }
-                            })
-                            .forEach(f => processFile(file + '/' + f, keys, args, options));
-                    } else {
-                        throw new UsageError(`directories will be skipped unless --dir given: ${file}`);
-                    }
-                } else {
-                    processFile(file, keys, args, options);
-                }
-            }
-        }
+        _run(args, config, options);
     } catch (e) {
         if (args.debug) {
             throw e;
@@ -190,6 +164,94 @@ function run(argv, config = {}, options = {}) {
             throw new UnknownError(e.message);
         }
     }
+}
+
+function _run(args, config, options) {
+    const keys = [];
+    if (args.key) {
+        keys.push(...args.key.map(key => readKey(key)));
+    } else if (config.defaultKeyFile) {
+        keys.push(readKey(config.defaultKeyFile));
+    }
+    if (args.file.length) {
+        for (const file of args.file) {
+            processFileArg(file, keys, args);
+        }
+    } else {
+        let encrypt;
+        if (args.encrypt) {
+            encrypt = true;
+        } else if (args.decrypt) {
+            encrypt = false;
+        } else {
+            throw new UsageError('no input files, but no operation (--encrypt/--decrypt) given!');
+        }
+        let encode;
+        if (args.base64) {
+            if (encrypt) {
+                encode = str => new Buffer(str).toString('base64');
+            } else {
+                encode = str => new Buffer(str, 'base64').toString();
+            }
+        } else {
+            encode = str => str;
+        }
+        let input;
+        if (options.stdin) {
+            input = options.stdin;
+        } else {
+            input = readStdin();
+        }
+        let output;
+        if (options.stdout) {
+            output = options.stdout;
+        } else {
+            output = process.stdout;
+        }
+        if (args.raw) {
+            if (encrypt) {
+                const crypt = yamlcrypt.encrypt(keys[0]);
+                output.write(crypt.encryptRaw(encode(input)));
+                output.write('\n');
+            } else {
+                const crypt = yamlcrypt.decrypt(keys[0]);
+                let result = crypt.decryptRaw(input);
+                output.write(encode(result));
+            }
+        } else {
+            const strs = [];
+            if (encrypt) {
+                const crypt = yamlcrypt.encrypt(keys[0]);
+                yaml.safeLoadAll(input, obj => {
+                    processStrings(obj, args.path, str => yamlcrypt.plaintext(str));
+                    const encrypted = crypt.safeDump(obj);
+                    strs.push(encrypted);
+                });
+            } else {
+                const crypt = yamlcrypt.decrypt(keys);
+                crypt.safeLoadAll(input, obj => strs.push(yaml.safeDump(obj)));
+            }
+            for (let idx = 0; idx < strs.length; idx++) {
+                if (idx > 0) {
+                    output.write('---\n');
+                }
+                output.write(strs[idx]);
+            }
+        }
+    }
+}
+
+function readStdin() {
+    var buf = Buffer.alloc(1024);
+    let str = '';
+    while (true) {
+        var len = fs.readSync(process.stdin.fd, buf, 0, buf.length);
+        if (!len) {
+            break;
+        }
+        str += buf.toString(null, 0, len);
+    }
+    return str;
 }
 
 function readKey(keyFile) {
@@ -212,6 +274,29 @@ function plaintextFile(file) {
 
 function encryptedFile(file) {
     return file.endsWith('.yaml-crypt') || file.endsWith('.yml-crypt');
+}
+
+function processFileArg(file, keys, args) {
+    const stat = fs.statSync(file);
+    if (stat.isDirectory()) {
+        if (args.dir) {
+            fs.readdirSync(file)
+                .filter(f => {
+                    if (args.encrypt) {
+                        return plaintextFile(f);
+                    } else if (args.decrypt) {
+                        return encryptedFile(f);
+                    } else {
+                        return plaintextFile(f) || encryptedFile(f);
+                    }
+                })
+                .forEach(f => processFile(file + '/' + f, keys, args));
+        } else {
+            throw new UsageError(`directories will be skipped unless --dir given: ${file}`);
+        }
+    } else {
+        processFile(file, keys, args);
+    }
 }
 
 function processFile(file, keys, args) {
@@ -245,8 +330,11 @@ function processFile(file, keys, args) {
     if (fs.existsSync(output)) {
         throw new UsageError(`output file already exists: ${output}`);
     }
-    const strs = [];
+    let strs = [];
     if (encrypt) {
+        if (keys.length > 1) {
+            console.warn('warning: multiple keys given, using first key for encryption!');
+        }
         const crypt = yamlcrypt.encrypt(keys[0]);
         yaml.safeLoadAll(content, obj => {
             processStrings(obj, args.path, str => yamlcrypt.plaintext(str));
@@ -254,8 +342,20 @@ function processFile(file, keys, args) {
             strs.push(encrypted);
         });
     } else {
-        const crypt = yamlcrypt.decrypt(keys);
-        crypt.safeLoadAll(content, obj => strs.push(yaml.safeDump(obj)));
+        let success = false;
+        for (const key of keys) {
+            try {
+                strs = [];
+                const crypt = yamlcrypt.decrypt(key);
+                crypt.safeLoadAll(content, obj => strs.push(yaml.safeDump(obj)));
+                success = true;
+            } catch (e) {
+                continue;
+            }
+        }
+        if (!success) {
+            throw new Error('No matching key to decrypt the given data!');
+        }
     }
     writeYaml(strs, output);
     if (args.rm) {

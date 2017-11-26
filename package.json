@@ -18,8 +18,7 @@
     "fernet": "^0.3.1",
     "js-yaml": "^3.9.1",
     "pkginfo": "^0.4.1",
-    "urlsafe-base64": "^1.0.0",
-    "write-file-atomic": "^2.3.0"
+    "urlsafe-base64": "^1.0.0"
   },
   "scripts": {
     "lint": "eslint .",
