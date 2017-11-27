@@ -48,6 +48,11 @@ You can also encrypt only certain parts of a file. Given the following YAML file
 
 you can use `--path data` to only encrypt the values `user1` and `secret123`.
 
+It is also possible to directly open encrypted files in an editor, decrypting them
+before opening and encrypting again when saving:
+
+    $ yaml-crypt -E my-file.yaml-crypt
+
 ## Configuration
 
 The yaml-crypt command looks in `~/.yaml-crypt` for a file `config.yaml` or `config.yml`.

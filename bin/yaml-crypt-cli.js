@@ -2,12 +2,16 @@
 
 const os = require('os');
 const fs = require('fs');
+const path = require('path');
 const process = require('process');
+const childProcess = require('child_process');
 
+const tmp = require('tmp');
 const argparse = require('argparse');
 const yaml = require('js-yaml');
 
 const yamlcrypt = require('../lib/yaml-crypt');
+const yamlcryptHelper = require('../lib/yaml-crypt-helper');
 
 require('pkginfo')(module);
 
@@ -114,6 +118,10 @@ function run(argv, config = {}, options = {}) {
         metavar: '<key-file>',
         help: 'Key files to use. Can be given multiple times to automatically select a matching decryption key'
     });
+    parser.addArgument(['-E', '--edit'], {
+        action: 'storeTrue',
+        help: 'Open an editor for the given files, transparently decrypting and encrypting the file content'
+    });
     parser.addArgument(['-B', '--base64'], {
         action: 'storeTrue',
         help: 'Encode/decode values using Base64 encoding before processing'
@@ -173,7 +181,11 @@ function _run(args, config, options) {
     } else if (config.defaultKeyFile) {
         keys.push(readKey(config.defaultKeyFile));
     }
-    if (args.file.length) {
+    if (args.edit) {
+        for (const file of args.file) {
+            editFile(file, keys, args);
+        }
+    } else if (args.file.length) {
         for (const file of args.file) {
             processFileArg(file, keys, args);
         }
@@ -185,16 +197,6 @@ function _run(args, config, options) {
             encrypt = false;
         } else {
             throw new UsageError('no input files, but no operation (--encrypt/--decrypt) given!');
-        }
-        let encode;
-        if (args.base64) {
-            if (encrypt) {
-                encode = str => new Buffer(str).toString('base64');
-            } else {
-                encode = str => new Buffer(str, 'base64').toString();
-            }
-        } else {
-            encode = str => str;
         }
         let input;
         if (options.stdin) {
@@ -210,25 +212,25 @@ function _run(args, config, options) {
         }
         if (args.raw) {
             if (encrypt) {
-                const crypt = yamlcrypt.encrypt(keys[0]);
-                output.write(crypt.encryptRaw(encode(input)));
+                const crypt = yamlcrypt.encrypt(keys[0], { 'base64': args.base64 });
+                output.write(crypt.encryptRaw(input));
                 output.write('\n');
             } else {
-                const crypt = yamlcrypt.decrypt(keys[0]);
+                const crypt = yamlcrypt.decrypt(keys[0], { 'base64': args.base64 });
                 let result = crypt.decryptRaw(input);
-                output.write(encode(result));
+                output.write(result);
             }
         } else {
             const strs = [];
             if (encrypt) {
-                const crypt = yamlcrypt.encrypt(keys[0]);
+                const crypt = yamlcrypt.encrypt(keys[0], { 'base64': args.base64 });
                 yaml.safeLoadAll(input, obj => {
-                    processStrings(obj, args.path, str => yamlcrypt.plaintext(str));
+                    yamlcryptHelper.processStrings(obj, args.path, str => new yamlcrypt.Plaintext(str));
                     const encrypted = crypt.safeDump(obj);
                     strs.push(encrypted);
                 });
             } else {
-                const crypt = yamlcrypt.decrypt(keys);
+                const crypt = yamlcrypt.decrypt(keys[0], { 'base64': args.base64 });
                 crypt.safeLoadAll(input, obj => strs.push(yaml.safeDump(obj)));
             }
             for (let idx = 0; idx < strs.length; idx++) {
@@ -249,7 +251,7 @@ function readStdin() {
         if (!len) {
             break;
         }
-        str += buf.toString(null, 0, len);
+        str += buf.toString('utf8', 0, len);
     }
     return str;
 }
@@ -335,9 +337,9 @@ function processFile(file, keys, args) {
         if (keys.length > 1) {
             console.warn('warning: multiple keys given, using first key for encryption!');
         }
-        const crypt = yamlcrypt.encrypt(keys[0]);
+        const crypt = yamlcrypt.encrypt(keys[0], { 'base64': args.base64 });
         yaml.safeLoadAll(content, obj => {
-            processStrings(obj, args.path, str => yamlcrypt.plaintext(str));
+            yamlcryptHelper.processStrings(obj, args.path, str => new yamlcrypt.Plaintext(str));
             const encrypted = crypt.safeDump(obj);
             strs.push(encrypted);
         });
@@ -346,9 +348,10 @@ function processFile(file, keys, args) {
         for (const key of keys) {
             try {
                 strs = [];
-                const crypt = yamlcrypt.decrypt(key);
+                const crypt = yamlcrypt.decrypt(key, { 'base64': args.base64 });
                 crypt.safeLoadAll(content, obj => strs.push(yaml.safeDump(obj)));
                 success = true;
+                break;
             } catch (e) {
                 continue;
             }
@@ -363,30 +366,34 @@ function processFile(file, keys, args) {
     }
 }
 
-function processStrings(obj, path, callback) {
-    let subobj = obj;
-    if (path) {
-        const parts = path.split('.');
-        for (let idx = 0; idx < parts.length; idx++) {
-            const part = parts[idx];
-            if (idx === parts.length - 1 && typeof subobj[part] === 'string') {
-                subobj[part] = callback(subobj[part]);
-                return;
-            } else {
-                subobj = subobj[part];
-            }
+function editFile(file, keys, args) {
+    let content;
+    try {
+        content = fs.readFileSync(file);
+    } catch (e) {
+        if (e.code === 'ENOENT') {
+            throw new UsageError(`file does not exist: ${file}`);
+        } else {
+            throw e;
         }
     }
-    for (const key in subobj) {
-        if (subobj.hasOwnProperty(key)) {
-            const value = subobj[key];
-            if (typeof value === 'string') {
-                subobj[key] = callback(value);
-            } else if (typeof value === 'object') {
-                processStrings(value, null, callback);
-            }
-        }
-    }
+
+    const dir = path.dirname(path.resolve(file));
+
+    const editor = process.env['EDITOR'] || 'vim';
+
+    const opts = { 'base64': args.base64 };
+    const transformed = yamlcryptHelper.transform(content, keys, opts, str => {
+        const tmpFile = tmp.fileSync({ 'dir': dir, 'postfix': '.yaml' });
+        fs.writeSync(tmpFile.fd, str);
+        fs.closeSync(tmpFile.fd);
+
+        childProcess.spawnSync(editor, [tmpFile.name], { 'stdio': 'inherit' });
+
+        return fs.readFileSync(tmpFile.name);
+    });
+
+    fs.writeFileSync(file, transformed);
 }
 
 function writeYaml(strs, file) {

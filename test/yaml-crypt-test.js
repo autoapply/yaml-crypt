@@ -20,8 +20,22 @@ describe('yaml-crypt', () => {
 
     it('should return the encrypted content', () => {
         const yaml = yamlcrypt.encrypt('aehae5Ui0Eechaeghau9Yoh9jufiep7H');
-        const result = yaml.safeDump({ 'key1': new yamlcrypt.PlaintextFernet('Hello, world!') });
+        const result = yaml.safeDump({ 'key1': new yamlcrypt.Plaintext('Hello, world!') });
         const expected = fs.readFileSync('./test/test-1.yaml-crypt').toString('utf8');
         expect(result).to.equal(expected);
+    });
+
+    it('should return the base64 encrypted content', () => {
+        const yaml = yamlcrypt.encrypt('aehae5Ui0Eechaeghau9Yoh9jufiep7H', { 'base64': true });
+        const result = yaml.safeDump({ 'base64': new yamlcrypt.Plaintext('Hello, world!') });
+        const expected = fs.readFileSync('./test/test-4.yaml-crypt').toString('utf8');
+        expect(result).to.equal(expected);
+    });
+
+    it('should read the decrypted base64 content', () => {
+        const yaml = yamlcrypt.decrypt('aehae5Ui0Eechaeghau9Yoh9jufiep7H', { 'base64': true });
+        const content = fs.readFileSync('./test/test-4.yaml-crypt');
+        const result = yaml.safeLoad(content);
+        expect(result.base64.toString()).to.equal('Hello, world!');
     });
 });
