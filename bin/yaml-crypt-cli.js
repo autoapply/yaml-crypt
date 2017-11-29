@@ -34,6 +34,9 @@ function main() {
         } else if (e instanceof UsageError || e instanceof UnknownError) {
             console.error(`${module.exports.name}: error: ${e.message}`);
             process.exit(5);
+        } else if (e instanceof ConfigurationError) {
+            console.error(`${module.exports.name}: could not parse configuration: ${e.message}`);
+            process.exit(6);
         } else {
             throw e;
         }
@@ -116,7 +119,12 @@ function run(argv, config = {}, options = {}) {
     parser.addArgument(['-k', '--key'], {
         action: 'append',
         metavar: '<key-file>',
-        help: 'Key files to use. Can be given multiple times to automatically select a matching decryption key'
+        help: 'Read a key from the given file path. Can be given multiple times to automatically select a matching decryption key'
+    });
+    parser.addArgument(['--key-fd'], {
+        action: 'append',
+        metavar: '<key-fd>',
+        help: 'Read a key from the given file descriptor. Can be given multiple times'
     });
     parser.addArgument(['-E', '--edit'], {
         action: 'storeTrue',
@@ -157,8 +165,17 @@ function run(argv, config = {}, options = {}) {
     if (args.raw && args.file.length) {
         throw new UsageError('no files may be given when --raw is used!');
     }
-    if (!args.key && !config.defaultKeyFile) {
-        throw new UsageError('no key file given and no default key file configured!');
+    if (args.edit && args.path) {
+        throw new UsageError('options --edit and --path cannot be combined!');
+    }
+    if (args.edit && args.raw) {
+        throw new UsageError('options --edit and --raw cannot be combined!');
+    }
+    if (args.edit && !args.file.length) {
+        throw new UsageError('option --edit used, but no files given!');
+    }
+    if (!args.key && !args.key_fd && (!config.keys || !config.keys.length)) {
+        throw new UsageError('no keys given and no default keys configured!');
     }
     if (args.rm && !args.file.length) {
         throw new UsageError('option --rm used, but no files given!');
@@ -166,7 +183,7 @@ function run(argv, config = {}, options = {}) {
     try {
         _run(args, config, options);
     } catch (e) {
-        if (args.debug) {
+        if (args.debug || e instanceof ConfigurationError) {
             throw e;
         } else {
             throw new UnknownError(e.message);
@@ -176,10 +193,40 @@ function run(argv, config = {}, options = {}) {
 
 function _run(args, config, options) {
     const keys = [];
-    if (args.key) {
-        keys.push(...args.key.map(key => readKey(key)));
-    } else if (config.defaultKeyFile) {
-        keys.push(readKey(config.defaultKeyFile));
+    if (args.key || args.key_fd) {
+        if (args.key) {
+            keys.push(...args.key.map(key => readKey(key)));
+        }
+        if (args.key_fd) {
+            for (const key of args.key_fd) {
+                const fd = parseInt(key);
+                if (fd || fd === 0) {
+                    const str = readFd(fd);
+                    keys.push(str.trim());
+                } else {
+                    throw new UsageError(`not a file descriptor: ${key}`);
+                }
+            }
+        }
+    } else if (config.keys) {
+        for (const obj of config.keys) {
+            if (obj.file && obj.key) {
+                throw new ConfigurationError('either file or key must be set, not both!');
+            } else if (obj.file) {
+                keys.push(readKey(obj.file));
+            } else if (obj.key) {
+                const type = typeof (obj.key);
+                if (type === 'string') {
+                    keys.push(obj.key.trim());
+                } else if (Buffer.isBuffer(obj.key)) {
+                    keys.push(obj.key.toString('utf8').trim());
+                } else {
+                    throw new ConfigurationError(`key entry is not a string: ${type}`);
+                }
+            } else {
+                throw new ConfigurationError('neither file nor key given for key entry!');
+            }
+        }
     }
     if (args.edit) {
         for (const file of args.file) {
@@ -202,7 +249,7 @@ function _run(args, config, options) {
         if (options.stdin) {
             input = options.stdin;
         } else {
-            input = readStdin();
+            input = readFd(process.stdin.fd);
         }
         let output;
         if (options.stdout) {
@@ -243,11 +290,11 @@ function _run(args, config, options) {
     }
 }
 
-function readStdin() {
+function readFd(fd) {
     var buf = Buffer.alloc(1024);
     let str = '';
     while (true) {
-        var len = fs.readSync(process.stdin.fd, buf, 0, buf.length);
+        var len = fs.readSync(fd, buf, 0, buf.length);
         if (!len) {
             break;
         }
@@ -413,6 +460,8 @@ function writeYaml(strs, file) {
 class UsageError extends Error { }
 
 class UnknownError extends Error { }
+
+class ConfigurationError extends Error { }
 
 class ExitError extends Error {
     constructor(status) {

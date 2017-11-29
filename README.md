@@ -48,6 +48,8 @@ You can also encrypt only certain parts of a file. Given the following YAML file
 
 you can use `--path data` to only encrypt the values `user1` and `secret123`.
 
+Kubernetes secrets are Base64 encoded, so you should use the `--base64` option.
+
 It is also possible to directly open encrypted files in an editor, decrypting them
 before opening and encrypting again when saving:
 
@@ -56,12 +58,17 @@ before opening and encrypting again when saving:
 ## Configuration
 
 The yaml-crypt command looks in `~/.yaml-crypt` for a file `config.yaml` or `config.yml`.
-Currently, only the `defaultKeyFile` property is supported. This key file will be used
-when no key files are given on the command line:
+Currently, only the `keys` property is supported. These keys will be used when no key
+files are given on the command line:
 
     $ cat ~/.yaml-crypt/config.yaml
-    defaultKeyFile: /home/user/.my-key
+    keys:
+    - file: /home/user/.my-key-file
+    - key: my-raw-key-data
+    - key: !!binary my-base64-key-data
     $ yaml-crypt my-file.yaml
+
+All whitespaces at the beginning and end of keys will be removed when reading keys.
 
 ## License
 

@@ -3,4 +3,4 @@ build:
 	yarn test
 
 push:
-	npm publish
+	yarn publish
