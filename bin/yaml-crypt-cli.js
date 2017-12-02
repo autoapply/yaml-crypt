@@ -230,7 +230,7 @@ function _run(args, config, options) {
     }
     if (args.edit) {
         for (const file of args.file) {
-            editFile(file, keys, args);
+            editFile(file, keys, args, config);
         }
     } else if (args.file.length) {
         for (const file of args.file) {
@@ -413,7 +413,7 @@ function processFile(file, keys, args) {
     }
 }
 
-function editFile(file, keys, args) {
+function editFile(file, keys, args, config) {
     let content;
     try {
         content = fs.readFileSync(file);
@@ -427,7 +427,7 @@ function editFile(file, keys, args) {
 
     const dir = path.dirname(path.resolve(file));
 
-    const editor = process.env['EDITOR'] || 'vim';
+    const editor = config['editor'] || process.env['EDITOR'] || 'vim';
 
     const opts = { 'base64': args.base64 };
     const transformed = yamlcryptHelper.transform(content, keys, opts, str => {
