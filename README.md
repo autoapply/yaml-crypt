@@ -1,15 +1,22 @@
 # yaml-crypt
 
+[![Build Status](https://img.shields.io/travis/pascalgn/yaml-crypt.svg?style=flat-square)](https://travis-ci.org/pascalgn/yaml-crypt) [![Coverage status](https://img.shields.io/coveralls/github/pascalgn/yaml-crypt.svg?style=flat-square)](https://coveralls.io/github/pascalgn/yaml-crypt) [![NPM version](https://img.shields.io/npm/v/yaml-crypt.svg?style=flat-square)](https://www.npmjs.org/package/yaml-crypt)
+
 Command line utility to encrypt and decrypt YAML documents.
 
 ## Installation
 
 The package is available on the [npm registry](https://www.npmjs.com/package/yaml-crypt), so just run
 
-    $ yarn add yaml-crypt
-    $ ./node_modules/yaml-crypt/bin/yaml-crypt.js --help
+    $ yarn global add yaml-crypt
+    $ yaml-crypt --help
 
-You can also install the package globally: `yarn global add yaml-crypt`
+You can also install the package locally:
+
+    $ mkdir yaml-crypt && cd yaml-crypt
+    $ yarn init --yes
+    $ yarn add yaml-crypt
+    $ ./node_modules/.bin/yaml-crypt --help
 
 ## Usage
 

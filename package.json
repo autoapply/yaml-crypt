@@ -23,11 +23,14 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "mocha --recursive"
+    "test": "nyc mocha --timeout=8000 --check-leaks",
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "devDependencies": {
     "chai": "^4.1.2",
+    "coveralls": "^3.0.0",
     "eslint": "^4.10.0",
-    "mocha": "^4.0.1"
+    "mocha": "^4.0.1",
+    "nyc": "^11.3.0"
   }
 }

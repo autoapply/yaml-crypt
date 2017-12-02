@@ -1,6 +1,7 @@
 .*
 !.gitignore
 !.eslintrc.json
+!.travis.yml
 
 *.log
 
