@@ -1,2 +1,4 @@
 first: 'Hello, world!'
 second: Hello!
+---
+other: 'Hello, world!'

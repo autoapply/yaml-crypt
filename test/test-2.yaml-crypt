@@ -2,3 +2,6 @@ first: !<!yaml-crypt/fernet:0x80> >-
   gAAAAAAAAAABAAECAwQFBgcICQoLDA0OD7nQ_JQsjDx78n7mQ9bW3T-rgiTN7WX3Uq66EDA0qxZDNQppXL6WaOAIW4x8ElmcRg==
 second: !<!yaml-crypt/fernet:0x80> >-
   gAAAAAAAAAABAAECAwQFBgcICQoLDA0ODzjOnkJEZ7hHk5YOIQNxL8_PdTDxFii3sQCqTs72_cSdXWEMD25WBeAD_cXFu3x_MQ==
+---
+other: !<!yaml-crypt/fernet:0x80> >-
+  gAAAAAAAAAABAAECAwQFBgcICQoLDA0OD7nQ_JQsjDx78n7mQ9bW3T-rgiTN7WX3Uq66EDA0qxZDNQppXL6WaOAIW4x8ElmcRg==

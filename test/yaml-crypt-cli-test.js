@@ -1,5 +1,4 @@
 const fs = require('fs');
-const stream = require('stream');
 
 const mocha = require('mocha');
 const describe = mocha.describe;
@@ -29,38 +28,85 @@ class Out {
 }
 
 describe('yaml-crypt-cli', () => {
+    it('should throw an error when using --unknown-option', () => {
+        expect(() => yamlcryptcli.run(['--unknown-option'], {}, { 'stdout': new Out() }))
+            .to.throw().with.property('status', 2);
+    });
+
+    it('should display usage info when using --help', () => {
+        expect(() => yamlcryptcli.run(['--help'], {}, { 'stdout': new Out() }))
+            .to.throw().with.property('status', 0);
+    });
+
     it('should throw an error when using --path and --raw', () => {
-        const out = new stream.Writable();
-        expect(() => yamlcryptcli.run(['--path', 'x', '--raw'], {}, { 'stdout': out })).to.throw();
+        expect(() => runWithKeyFile(['--path', 'x', '--raw'], {}, { 'stdout': new Out() }))
+            .to.throw(/cannot be combined/);
     });
 
     it('should throw an error when passing directory without --dir', () => {
-        const out = new stream.Writable();
-        expect(() => yamlcryptcli.run(['.'], {}, { 'stdout': out })).to.throw();
+        expect(() => runWithKeyFile(['.'], {}, { 'stdout': new Out() }))
+            .to.throw(/directories will be skipped/);
+    });
+
+    it('should throw an error when passing non-existing files to --edit', () => {
+        expect(() => runWithKeyFile(['--edit', 'nonexisting'], {}, { 'stdout': new Out() }))
+            .to.throw(/file does not exist/);
+    });
+
+    it('should throw an error when encrypting with two keys', () => {
+        const secondKeyFile = tmp.fileSync();
+        fs.writeSync(secondKeyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep72');
+        expect(() => runWithKeyFile(['-k', secondKeyFile.name, '-e'], {}, { 'stdout': new Out() }))
+            .to.throw(/more than one key/);
     });
 
     it('should encrypt the given YAML file', () => {
-        const keyFile = tmp.fileSync();
-        fs.writeSync(keyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
         const input = tmp.fileSync({ 'postfix': '.yaml' });
-        fs.writeSync(input.fd, yaml.safeDump({ 'first': 'Hello, world!', 'second': 'Hello!' }));
-        const out = new stream.Writable();
-        yamlcryptcli.run(['-k', keyFile.name, input.name], {}, { 'stdout': out });
+        fs.copyFileSync('./test/test-2.yaml', input.name);
+        runWithKeyFile([input.name], {}, { 'stdout': new Out() });
         const output = fs.readFileSync(input.name + '-crypt');
         const expected = fs.readFileSync('./test/test-2.yaml-crypt');
         expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
     });
 
+    it('should decrypt the given YAML file', () => {
+        const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
+        fs.copyFileSync('./test/test-2.yaml-crypt', input.name);
+        runWithKeyFile([input.name], {}, { 'stdout': new Out() });
+        const output = fs.readFileSync(input.name.substring(0, input.name.length - '-crypt'.length));
+        const expected = fs.readFileSync('./test/test-2.yaml');
+        expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
+    });
+
     it('should encrypt only parts of the YAML file when using --path', () => {
-        const keyFile = tmp.fileSync();
-        fs.writeSync(keyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
         const input = tmp.fileSync({ 'postfix': '.yaml' });
         fs.writeSync(input.fd, yaml.safeDump({ 'a': { 'b': { 'c': 'secret' } }, 'x': 'plain' }));
-        const out = new stream.Writable();
-        yamlcryptcli.run(['-k', keyFile.name, '--path', 'a.b.c', input.name], {}, { 'stdout': out });
+        runWithKeyFile(['--path', 'a.b.c', input.name], {}, { 'stdout': new Out() });
         const output = fs.readFileSync(input.name + '-crypt');
         const expected = fs.readFileSync('./test/test-3.yaml-crypt');
         expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
+    });
+
+    it('should remove the old files when using --rm', () => {
+        const input = tmp.fileSync({ 'postfix': '.yaml' });
+        fs.copyFileSync('./test/test-2.yaml', input.name);
+        runWithKeyFile(['--rm', input.name], {}, { 'stdout': new Out() });
+        expect(fs.existsSync(input.name)).to.equal(false);
+    });
+
+    function runWithKeyFile(argv, config, options) {
+        const keyFile = tmp.fileSync();
+        fs.writeSync(keyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
+        return yamlcryptcli.run(['-k', keyFile.name].concat(argv), config, options);
+    }
+
+    it('should throw an error when no matching key is available', () => {
+        const keyFile = tmp.fileSync();
+        fs.writeSync(keyFile.fd, 'INVALID_KEYchaeghau9Yoh9jufiep7H');
+        const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
+        fs.copyFileSync('./test/test-2.yaml-crypt', input.name);
+        expect(() => yamlcryptcli.run(['-k', keyFile.name, input.name], {}, { 'stdout': new Out() }))
+            .to.throw(/No matching key/);
     });
 
     it('should decrypt the given input', () => {

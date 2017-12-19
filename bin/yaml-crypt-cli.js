@@ -245,6 +245,9 @@ function _run(args, config, options) {
         } else {
             throw new UsageError('no input files, but no operation (--encrypt/--decrypt) given!');
         }
+        if (encrypt && keys.length > 1) {
+            throw new UsageError(`encrypting, but more than one key given!`);
+        }
         let input;
         if (options.stdin) {
             input = options.stdin;
@@ -381,9 +384,6 @@ function processFile(file, keys, args) {
     }
     let strs = [];
     if (encrypt) {
-        if (keys.length > 1) {
-            console.warn('warning: multiple keys given, using first key for encryption!');
-        }
         const crypt = yamlcrypt.encrypt(keys[0], { 'base64': args.base64 });
         yaml.safeLoadAll(content, obj => {
             yamlcryptHelper.processStrings(obj, args.path, str => new yamlcrypt.Plaintext(str));
