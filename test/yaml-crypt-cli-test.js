@@ -11,7 +11,7 @@ const yaml = require('js-yaml');
 
 const yamlcryptcli = require('../bin/yaml-crypt-cli');
 
-require('./crypto-util').setupFernet();
+require('./crypto-util').setupCrypto();
 
 class Out {
     constructor() {
@@ -60,18 +60,27 @@ describe('yaml-crypt-cli', () => {
             .to.throw(/more than one key/);
     });
 
-    it('should encrypt the given YAML file', () => {
+    it('should encrypt the given YAML file (fernet)', () => {
         const input = tmp.fileSync({ 'postfix': '.yaml' });
         fs.copyFileSync('./test/test-2.yaml', input.name);
         runWithKeyFile([input.name], {}, { 'stdout': new Out() });
         const output = fs.readFileSync(input.name + '-crypt');
-        const expected = fs.readFileSync('./test/test-2.yaml-crypt');
+        const expected = fs.readFileSync('./test/test-2a.yaml-crypt');
+        expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
+    });
+
+    it('should encrypt the given YAML file (branca)', () => {
+        const input = tmp.fileSync({ 'postfix': '.yaml' });
+        fs.copyFileSync('./test/test-2.yaml', input.name);
+        runWithKeyFile(['-a', 'branca', input.name], {}, { 'stdout': new Out() });
+        const output = fs.readFileSync(input.name + '-crypt');
+        const expected = fs.readFileSync('./test/test-2b.yaml-crypt');
         expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
     });
 
     it('should decrypt the given YAML file', () => {
         const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
-        fs.copyFileSync('./test/test-2.yaml-crypt', input.name);
+        fs.copyFileSync('./test/test-2a.yaml-crypt', input.name);
         runWithKeyFile([input.name], {}, { 'stdout': new Out() });
         const output = fs.readFileSync(input.name.substring(0, input.name.length - '-crypt'.length));
         const expected = fs.readFileSync('./test/test-2.yaml');
@@ -104,7 +113,7 @@ describe('yaml-crypt-cli', () => {
         const keyFile = tmp.fileSync();
         fs.writeSync(keyFile.fd, 'INVALID_KEYchaeghau9Yoh9jufiep7H');
         const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
-        fs.copyFileSync('./test/test-2.yaml-crypt', input.name);
+        fs.copyFileSync('./test/test-2a.yaml-crypt', input.name);
         expect(() => yamlcryptcli.run(['-k', keyFile.name, input.name], {}, { 'stdout': new Out() }))
             .to.throw(/No matching key/);
     });
@@ -116,7 +125,7 @@ describe('yaml-crypt-cli', () => {
             ]
         };
         const options = {
-            'stdin': fs.readFileSync('./test/test-2.yaml-crypt'),
+            'stdin': fs.readFileSync('./test/test-2a.yaml-crypt'),
             'stdout': new Out()
         };
         yamlcryptcli.run(['-d'], config, options);
@@ -146,12 +155,12 @@ describe('yaml-crypt-cli', () => {
         fs.writeSync(keyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
 
         const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
-        fs.copyFileSync('./test/test-2.yaml-crypt', input.name);
+        fs.copyFileSync('./test/test-2a.yaml-crypt', input.name);
 
         yamlcryptcli.run(['-k', keyFile.name, '--edit', input.name], { 'editor': 'touch' }, {});
 
         const output = fs.readFileSync(input.name);
-        const expected = fs.readFileSync('./test/test-2.yaml-crypt');
+        const expected = fs.readFileSync('./test/test-2a.yaml-crypt');
         expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
     });
 });

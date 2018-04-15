@@ -1,2 +1,3 @@
 key1: !<!yaml-crypt/fernet:0x80> >-
   gAAAAAAAAAABAAECAwQFBgcICQoLDA0OD7nQ_JQsjDx78n7mQ9bW3T-rgiTN7WX3Uq66EDA0qxZDNQppXL6WaOAIW4x8ElmcRg==
+key2: !<!yaml-crypt/branca:0xBA> XUvrtHkyXTh1VUW885Ta4V5eQ3hBMFQMC3S3QwEfWzKWVDt3A5TnVUNtVXubi0fsAA8eerahpobwC8

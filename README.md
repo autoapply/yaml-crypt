@@ -22,8 +22,10 @@ You can also install the package locally:
 
 ## Usage
 
-First you will need to generate a key file. Currently, only the [Fernet](https://github.com/fernet/spec/blob/master/Spec.md)
-encryption scheme is supported, so you will need a key with exactly 32 bytes.
+First you will need to generate a key file. Currently,
+both [Fernet](https://github.com/fernet/spec/blob/master/Spec.md)
+and [Branca](https://branca.io/) encryption schemes are supported,
+so you will need a key with exactly 32 bytes.
 The easiest way is to use the [pwgen](https://linux.die.net/man/1/pwgen) command:
 
     $ pwgen 32 1 > my-key

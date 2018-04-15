@@ -8,7 +8,7 @@ const expect = chai.expect;
 
 const yamlcrypt = require('../lib/yaml-crypt');
 
-require('./crypto-util').setupFernet();
+require('./crypto-util').setupCrypto();
 
 describe('yaml-crypt', () => {
     it('should read the decrypted content', () => {
@@ -20,7 +20,10 @@ describe('yaml-crypt', () => {
 
     it('should return the encrypted content', () => {
         const yaml = yamlcrypt.encrypt('aehae5Ui0Eechaeghau9Yoh9jufiep7H');
-        const result = yaml.safeDump({ 'key1': new yamlcrypt.Plaintext('Hello, world!') });
+        const result = yaml.safeDump({
+            'key1': new yamlcrypt.Plaintext('Hello, world!'),
+            'key2': new yamlcrypt.Plaintext('Hello, world!', null, 'branca:0xBA')
+        });
         const expected = fs.readFileSync('./test/test-1.yaml-crypt').toString('utf8');
         expect(result).to.equal(expected);
     });

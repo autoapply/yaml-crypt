@@ -1,6 +1,6 @@
 {
   "name": "yaml-crypt",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Encrypt and decrypt YAML documents",
   "license": "MIT",
   "author": "Pascal",
@@ -15,8 +15,9 @@
   },
   "dependencies": {
     "argparse": "^1.0.7",
+    "branca": "^0.2.0",
     "fernet": "^0.3.1",
-    "js-yaml": "^3.9.1",
+    "js-yaml": "^3.11.0",
     "pkginfo": "^0.4.1",
     "tmp": "^0.0.33",
     "urlsafe-base64": "^1.0.0"
@@ -30,7 +31,7 @@
     "chai": "^4.1.2",
     "coveralls": "^3.0.0",
     "eslint": "^4.10.0",
-    "mocha": "^4.0.1",
-    "nyc": "^11.3.0"
+    "mocha": "^5.1.0",
+    "nyc": "^11.6.0"
   }
 }
