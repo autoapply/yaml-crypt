@@ -150,9 +150,9 @@ function run(argv, config = {}, options = {}) {
         action: 'storeTrue',
         help: 'Allows to pass directories as input, will process all files within the given directories (non-recursive)'
     });
-    parser.addArgument(['--rm'], {
+    parser.addArgument(['--keep'], {
         action: 'storeTrue',
-        help: 'Delete original files after encryption/decryption. Use with caution!'
+        help: 'Keep the original files after encryption/decryption'
     });
     parser.addArgument(['file'], {
         nargs: '*',
@@ -181,8 +181,8 @@ function run(argv, config = {}, options = {}) {
     if (!args.key && !args.key_fd && (!config.keys || !config.keys.length)) {
         throw new UsageError('no keys given and no default keys configured!');
     }
-    if (args.rm && !args.file.length) {
-        throw new UsageError('option --rm used, but no files given!');
+    if (args.keep && !args.file.length) {
+        throw new UsageError('option --keep used, but no files given!');
     }
     try {
         _run(args, config, options);
@@ -423,10 +423,10 @@ function processFile(file, keys, algorithm, args) {
             throw new Error('No matching key to decrypt the given data!');
         }
     }
-    writeYaml(strs, output);
-    if (args.rm) {
-        fs.unlinkSync(file);
+    if (!args.keep) {
+        fs.renameSync(file, output);
     }
+    writeYaml(strs, output);
 }
 
 function editFile(file, keys, algorithm, args, config) {
@@ -460,7 +460,7 @@ function editFile(file, keys, algorithm, args, config) {
 }
 
 function writeYaml(strs, file) {
-    const fd = fs.openSync(file, 'wx');
+    const fd = fs.openSync(file, 'w');
     try {
         for (let idx = 0; idx < strs.length; idx++) {
             if (idx > 0) {

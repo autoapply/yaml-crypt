@@ -96,17 +96,24 @@ describe('yaml-crypt-cli', () => {
         expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
     });
 
-    it('should remove the old files when using --rm', () => {
+    it('should remove the old files', () => {
         const input = tmp.fileSync({ 'postfix': '.yaml' });
         fs.copyFileSync('./test/test-2.yaml', input.name);
-        runWithKeyFile(['--rm', input.name], {}, { 'stdout': new Out() });
+        runWithKeyFile([input.name], {}, { 'stdout': new Out() });
         expect(fs.existsSync(input.name)).to.equal(false);
+    });
+
+    it('should not remove the old files when using --keep', () => {
+        const input = tmp.fileSync({ 'postfix': '.yaml' });
+        fs.copyFileSync('./test/test-2.yaml', input.name);
+        runWithKeyFile(['--keep', input.name], {}, { 'stdout': new Out() });
+        expect(fs.existsSync(input.name)).to.equal(true);
     });
 
     function runWithKeyFile(argv, config, options) {
         const keyFile = tmp.fileSync();
         fs.writeSync(keyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
-        return yamlcryptcli.run(['-k', keyFile.name].concat(argv), config, options);
+        return yamlcryptcli.run(['--debug', '-k', keyFile.name].concat(argv), config, options);
     }
 
     it('should throw an error when no matching key is available', () => {
