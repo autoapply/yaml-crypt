@@ -40,7 +40,7 @@ describe('yaml-crypt-cli', () => {
 
     it('should throw an error when using --path and --raw', () => {
         expect(() => runWithKeyFile(['--path', 'x', '--raw'], {}, { 'stdout': new Out() }))
-            .to.throw(/cannot be combined/);
+            .to.throw(/cannot combine/);
     });
 
     it('should throw an error when passing directory without --dir', () => {
@@ -57,7 +57,17 @@ describe('yaml-crypt-cli', () => {
         const secondKeyFile = tmp.fileSync();
         fs.writeSync(secondKeyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep72');
         expect(() => runWithKeyFile(['-k', secondKeyFile.name, '-e'], {}, { 'stdout': new Out() }))
-            .to.throw(/more than one key/);
+            .to.throw(/encrypting, but multiple keys given/);
+    });
+
+    it('should throw an error when trying to read a nonexisting environment variable', () => {
+        expect(() => yamlcryptcli.run(['-k', 'env:YAML_CRYPT_321'], {}, { 'stdout': new Out() }))
+            .to.throw(/no such environment variable/);
+    });
+
+    it('should throw an error when passing an invalid file descriptor', () => {
+        expect(() => yamlcryptcli.run(['-k', 'fd:x'], {}, { 'stdout': new Out() }))
+            .to.throw(/not a file descriptor/);
     });
 
     it('should encrypt the given YAML file (fernet)', () => {
@@ -122,12 +132,40 @@ describe('yaml-crypt-cli', () => {
         const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
         fs.copyFileSync('./test/test-2a.yaml-crypt', input.name);
         expect(() => yamlcryptcli.run(['-k', keyFile.name, input.name], {}, { 'stdout': new Out() }))
-            .to.throw(/No matching key/);
+            .to.throw(/no matching key/);
+    });
+
+    it('should throw an error when no named key is available in the config file', () => {
+        const config = {
+            'keys': []
+        };
+        const options = {
+            'stdin': '',
+            'stdout': new Out()
+        };
+        expect(() => yamlcryptcli.run(['-k', 'config:name1', '-d'], config, options))
+            .to.throw(/key not found in configuration file/);
+    });
+
+    it('should throw an error when the key names are not unique in the config file', () => {
+        const config = {
+            'keys': [
+                { 'key': 'a', 'name': 'key1' },
+                { 'key': 'b', 'name': 'key1' }
+            ]
+        };
+        const options = {
+            'stdin': '',
+            'stdout': new Out()
+        };
+        expect(() => yamlcryptcli.run(['-d'], config, options))
+            .to.throw(/non-unique key name/);
     });
 
     it('should decrypt the given input', () => {
         const config = {
             'keys': [
+                { 'key': 'INVALID_KEY____________________X' },
                 { 'key': 'aehae5Ui0Eechaeghau9Yoh9jufiep7H' }
             ]
         };
@@ -140,19 +178,35 @@ describe('yaml-crypt-cli', () => {
         expect(options.stdout.str).to.equal(expected);
     });
 
-    it('should encrypt the whole input when using --raw', () => {
-        const keyFile = tmp.fileSync();
-        fs.writeSync(keyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
+    it('should decrypt the given input when using --raw', () => {
         const config = {
             'keys': [
-                { 'file': keyFile.name }
+                { 'key': 'INVALID_KEY_123________________X' },
+                { 'key': 'aehae5Ui0Eechaeghau9Yoh9jufiep7H' },
+                { 'key': 'INVALID_KEY_345________________X' }
+            ]
+        };
+        const input = 'gAAAAAAAAAABAAECAwQFBgcICQoLDA0OD7nQ_JQsjDx78n7mQ9bW3T-rgiTN7WX3Uq66EDA0qxZDNQppXL6WaOAIW4x8ElmcRg==';
+        const options = {
+            'stdin': input,
+            'stdout': new Out()
+        };
+        yamlcryptcli.run(['-d', '--raw'], config, options);
+        expect(options.stdout.str).to.equal('Hello, world!');
+    });
+
+    it('should encrypt the whole input when using --raw', () => {
+        const config = {
+            'keys': [
+                { 'key': 'KEY_THAT_SHOULD_NOT_BE_USED_____', 'name': 'key1' },
+                { 'key': 'aehae5Ui0Eechaeghau9Yoh9jufiep7H', 'name': 'key2' }
             ]
         };
         const options = {
             'stdin': 'Hello, world!',
             'stdout': new Out()
         };
-        yamlcryptcli.run(['-e', '--raw'], config, options);
+        yamlcryptcli.run(['-e', '--raw', '-K', 'c:key2'], config, options);
         const expected = 'gAAAAAAAAAABAAECAwQFBgcICQoLDA0OD7nQ_JQsjDx78n7mQ9bW3T-rgiTN7WX3Uq66EDA0qxZDNQppXL6WaOAIW4x8ElmcRg==\n';
         expect(options.stdout.str).to.equal(expected);
     });
@@ -164,7 +218,7 @@ describe('yaml-crypt-cli', () => {
         const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
         fs.copyFileSync('./test/test-2a.yaml-crypt', input.name);
 
-        yamlcryptcli.run(['-k', keyFile.name, '--edit', input.name], { 'editor': 'touch' }, {});
+        yamlcryptcli.run(['--debug', '-k', keyFile.name, '--edit', input.name], { 'editor': 'touch' }, {});
 
         const output = fs.readFileSync(input.name);
         const expected = fs.readFileSync('./test/test-2a.yaml-crypt');
