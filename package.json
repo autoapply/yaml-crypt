@@ -4,10 +4,10 @@
   "description": "Encrypt and decrypt YAML documents",
   "license": "MIT",
   "author": "Pascal",
-  "homepage": "https://github.com/pascalgn/yaml-crypt",
+  "homepage": "https://github.com/autoapply/yaml-crypt",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pascalgn/yaml-crypt.git"
+    "url": "https://github.com/autoapply/yaml-crypt.git"
   },
   "main": "./lib/yaml-crypt.js",
   "bin": {

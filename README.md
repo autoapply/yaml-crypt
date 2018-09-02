@@ -1,7 +1,7 @@
 # yaml-crypt
 
-[![Build Status](https://img.shields.io/travis/pascalgn/yaml-crypt.svg?style=flat-square)](https://travis-ci.org/pascalgn/yaml-crypt)
-[![Coverage status](https://img.shields.io/coveralls/github/pascalgn/yaml-crypt.svg?style=flat-square)](https://coveralls.io/github/pascalgn/yaml-crypt)
+[![Build Status](https://img.shields.io/travis/autoapply/yaml-crypt.svg?style=flat-square)](https://travis-ci.org/autoapply/yaml-crypt)
+[![Coverage status](https://img.shields.io/coveralls/github/autoapply/yaml-crypt.svg?style=flat-square)](https://coveralls.io/github/autoapply/yaml-crypt)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 Command line utility to encrypt and decrypt YAML documents.
