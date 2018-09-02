@@ -70,6 +70,15 @@ describe('yaml-crypt-cli', () => {
             .to.throw(/not a file descriptor/);
     });
 
+    it('should generate a key', () => {
+        const options = {
+            'stdin': '',
+            'stdout': new Out()
+        };
+        yamlcryptcli.run(['--debug', '--generate-key'], {}, options);
+        expect(options.stdout.str.trimRight()).to.have.lengthOf(32);
+    });
+
     it('should encrypt the given YAML file (fernet)', () => {
         const input = tmp.fileSync({ 'postfix': '.yaml' });
         fs.copyFileSync('./test/test-2.yaml', input.name);

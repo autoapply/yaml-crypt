@@ -24,25 +24,17 @@ You can also install the package locally:
 
 First you will need to generate a key file. Currently,
 both [Fernet](https://github.com/fernet/spec/blob/master/Spec.md)
-and [Branca](https://branca.io/) encryption schemes are supported,
-so you will need a key with exactly 32 bytes.
-The easiest way is to use the [pwgen](https://linux.die.net/man/1/pwgen) command:
+and [Branca](https://branca.io/) encryption schemes are supported.
 
-    $ pwgen 32 1 > my-key
+To generate a new random key, run
 
-Another way would be to use the `urandom` device file:
-
-    $ cat /dev/urandom | LC_ALL=C tr -dc A-Za-z0-9 | head -c 32 > my-key
+    $ yaml-crypt --generate-key > my-key
 
 To encrypt all values in a YAML file, run
 
     $ yaml-crypt -k my-key my-file.yaml
 
-This will generate the file `my-file.yaml-crypt`, while leaving `my-file.yaml` intact.
-If you want to delete the original file after encryption, use the `--rm` option.
-
-> Files will be deleted using [unlink](https://linux.die.net/man/2/unlink).
-> If this does not meet your security needs, consider removing the file manually instead!
+This will generate the file `my-file.yaml-crypt`.
 
 The operation will be performed based on the file extension, so to decrypt a file,
 just use
@@ -69,12 +61,11 @@ before opening and encrypting again when saving:
 ## Configuration
 
 The yaml-crypt command looks in `~/.yaml-crypt` for a file `config.yaml` or `config.yml`.
-Currently, only the `keys` property is supported. These keys will be used when no key
-files are given on the command line:
+Currently, only the `keys` property is supported. These keys will be used when no keys
+are given on the command line:
 
     $ cat ~/.yaml-crypt/config.yaml
     keys:
-    - file: /home/user/.my-key-file
     - key: my-raw-key-data
     - key: !!binary my-base64-key-data
     $ yaml-crypt my-file.yaml

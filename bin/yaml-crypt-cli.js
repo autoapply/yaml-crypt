@@ -116,6 +116,10 @@ function run(argv, config = {}, options = {}) {
         action: 'storeTrue',
         help: 'Decrypt data'
     });
+    parser.addArgument(['--generate-key'], {
+        action: 'storeTrue',
+        help: 'Generate a new random key. Use -a to specify the algorithm'
+    });
     parser.addArgument(['-k'], {
         action: 'append',
         metavar: '<key>',
@@ -222,11 +226,20 @@ function run(argv, config = {}, options = {}) {
     if (args.edit && !args.file.length) {
         throw new UsageError('option --edit used, but no files given!');
     }
-    if (!args.k && (!config.keys || !config.keys.length)) {
+    if (!args.generate_key && !args.k && (!config.keys || !config.keys.length)) {
         throw new UsageError('no keys given and no default keys configured!');
     }
     if (args.keep && !args.file.length) {
         throw new UsageError('option --keep used, but no files given!');
+    }
+    if (args.generate_key && args.encrypt) {
+        throw new UsageError('cannot combine --generate-key and --encrypt!');
+    }
+    if (args.generate_key && args.decrypt) {
+        throw new UsageError('cannot combine --generate-key and --decrypt!');
+    }
+    if (args.generate_key && args.file && args.file.length) {
+        throw new UsageError('option --generate-key used, but files given!');
     }
     try {
         _run(args, config, options);
@@ -250,6 +263,25 @@ function _run(args, config, options) {
     if (args.algorithm && !algorithm) {
         throw new UsageError(`unknown encryption algorithm: ${args.algorithm}`);
     }
+    let input;
+    if (options.stdin) {
+        input = options.stdin;
+    } else {
+        input = process.stdin;
+    }
+    let output;
+    if (options.stdout) {
+        output = options.stdout;
+    } else {
+        output = process.stdout;
+        output.on('error', err => {
+            if (err && err.code === 'EPIPE') {
+                console.error('broken pipe');
+            } else {
+                console.error('unknown I/O error!');
+            }
+        });
+    }
     const configKeys = readConfigKeys(config);
     const keys = [];
     if (args.k) {
@@ -260,7 +292,11 @@ function _run(args, config, options) {
     const encryptionKey = (args.K
         ? readKey(configKeys, args.K)
         : (keys.length === 1 ? keys[0] : null));
-    if (args.edit) {
+    if (args.generate_key) {
+        const key = yamlcrypt.generateKey(algorithm);
+        output.write(key);
+        output.write('\n');
+    } else if (args.edit) {
         for (const file of args.file) {
             editFile(file, keys, encryptionKey, algorithm, args, config);
         }
@@ -279,25 +315,6 @@ function _run(args, config, options) {
         }
         if (encrypt) {
             checkEncryptionKey(keys, encryptionKey);
-        }
-        let input;
-        if (options.stdin) {
-            input = options.stdin;
-        } else {
-            input = process.stdin;
-        }
-        let output;
-        if (options.stdout) {
-            output = options.stdout;
-        } else {
-            output = process.stdout;
-            output.on('error', err => {
-                if (err && err.code === 'EPIPE') {
-                    console.error('broken pipe');
-                } else {
-                    console.error('unknown I/O error!');
-                }
-            });
         }
         const opts = { 'base64': args.base64, 'algorithm': algorithm };
         readInput(input, buf => {
