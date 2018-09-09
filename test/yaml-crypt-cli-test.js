@@ -49,7 +49,7 @@ describe('yaml-crypt-cli', () => {
     });
 
     it('should throw an error when passing non-existing files to --edit', () => {
-        expect(() => runWithKeyFile(['--edit', 'nonexisting'], {}, { 'stdout': new Out() }))
+        expect(() => runWithKeyFile(['--edit', 'x.yaml-crypt'], {}, { 'stdout': new Out() }))
             .to.throw(/file does not exist/);
     });
 

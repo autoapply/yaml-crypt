@@ -28,35 +28,49 @@ and [Branca](https://branca.io/) encryption schemes are supported.
 
 To generate a new random key, run
 
-    $ yaml-crypt --generate-key > my-key
+    $ yaml-crypt --generate-key > my-key-file
 
 To encrypt all values in a YAML file, run
 
-    $ yaml-crypt -k my-key my-file.yaml
+    $ yaml-crypt -k my-key-file my-file.yaml
 
-This will generate the file `my-file.yaml-crypt`.
+This will encrypt the file contents and rename the file to `my-file.yaml-crypt`.
 
 The operation will be performed based on the file extension, so to decrypt a file,
 just use
 
-    $ yaml-crypt -k my-key my-file.yaml-crypt
+    $ yaml-crypt -k my-key-file my-file.yaml-crypt
 
 You can also encrypt only certain parts of a file. Given the following YAML file
 
-    apiVersion: v1
-    kind: Secret
-    data:
-      username: user1
-      password: secret123
+```yaml
+apiVersion: v1
+kind: Secret
+data:
+  username: user1
+  password: secret123
+```
 
 you can use `--path data` to only encrypt the values `user1` and `secret123`.
 
-Kubernetes secrets are Base64 encoded, so you should use the `--base64` option.
+>[Kubernetes](https://kubernetes.io/) secrets are Base64 encoded, so you should also use the `--base64` option.
 
 It is also possible to directly open encrypted files in an editor, decrypting them
 before opening and encrypting again when saving:
 
     $ yaml-crypt -E my-file.yaml-crypt
+
+When editing, you can add new encrypted data by specifying the yaml tag `<!yaml-crypt>`:
+
+```yaml
+unencrypted:
+  hello: world
+encrypted:
+  key1: !<!yaml-crypt/:0> secret-key-1
+  # add the following line to add a new encrypted entry "key2" to the file,
+  # which will be encrypted before being written to disk:
+  key2: !<!yaml-crypt> secret123
+```
 
 ## Configuration
 

@@ -195,6 +195,7 @@ function run(argv, config = {}, options = {}) {
                 + 'the matching decryption key will be used to encrypt the modified data. '
                 + 'In all other cases, an encryption key must be explicitly selected using "-K".'
         });
+        parser.epilog = 'For more information, visit https://github.com/autoapply/yaml-crypt';
     } else {
         parser.epilog = 'For more details, specify --help';
     }
@@ -583,6 +584,10 @@ function tryDecrypt(opts, keys, callback) {
 }
 
 function editFile(file, keys, encryptionKey, algorithm, args, config) {
+    if (!encryptedFile(file)) {
+        throw new UsageError(`unexpected extension, expecting .yaml-crypt or .yml-crypt: ${file}`);
+    }
+
     let content;
     try {
         content = fs.readFileSync(file);
