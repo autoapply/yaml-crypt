@@ -139,15 +139,15 @@ function run(argv, config = {}, options = {}) {
     });
     parser.addArgument(['-B', '--base64'], {
         action: 'storeTrue',
-        help: 'Encode/decode values using Base64 encoding before processing'
+        help: 'Encode values using Base64 encoding before encrypting and decode values after decrypting'
     });
     parser.addArgument(['--path'], {
         metavar: '<yaml-path>',
-        help: 'Only process values below the given YAML path. For the document {obj:{key:secret},other:[value1,value2]} use "obj.key" to only process "secret"'
+        help: 'Only process values below the given YAML path. For the document {obj:{key:secret},other:[value1,value2]} use "--path=obj.key" to only process "secret"'
     });
     parser.addArgument(['--raw'], {
         action: 'storeTrue',
-        help: 'Encrypt/decrypt raw messages from stdin instead of YAML documents'
+        help: 'Encrypt/decrypt raw messages instead of YAML documents'
     });
     parser.addArgument(['-D', '--dir'], {
         action: 'storeTrue',
@@ -160,7 +160,7 @@ function run(argv, config = {}, options = {}) {
     parser.addArgument(['file'], {
         nargs: '*',
         metavar: '<file>',
-        help: 'Input files to process'
+        help: 'Input file(s) to process'
     });
     if (process.argv && process.argv.includes('--help')) {
         parser.addArgumentGroup({

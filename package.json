@@ -1,6 +1,6 @@
 {
   "name": "yaml-crypt",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Encrypt and decrypt YAML documents",
   "license": "MIT",
   "author": "Pascal",
@@ -25,6 +25,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "nyc mocha --timeout=8000 --check-leaks",
+    "build": "yarn lint && yarn test",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "devDependencies": {

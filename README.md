@@ -41,6 +41,8 @@ just use
 
     $ yaml-crypt -k my-key-file my-file.yaml-crypt
 
+To specify an explicit operation, use `-e` or `-d` for encryption or decryption.
+
 You can also encrypt only certain parts of a file. Given the following YAML file
 
 ```yaml
