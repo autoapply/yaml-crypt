@@ -197,7 +197,7 @@ describe('yaml-crypt-cli', () => {
         };
         const input = 'gAAAAAAAAAABAAECAwQFBgcICQoLDA0OD7nQ_JQsjDx78n7mQ9bW3T-rgiTN7WX3Uq66EDA0qxZDNQppXL6WaOAIW4x8ElmcRg==';
         const options = {
-            'stdin': input,
+            'stdin': Buffer.from(input),
             'stdout': new Out()
         };
         yamlcryptcli.run(['-d', '--raw'], config, options);

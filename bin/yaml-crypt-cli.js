@@ -29,17 +29,21 @@ function main() {
     try {
         run(null, cfg, {});
     } catch (e) {
-        if (e instanceof ExitError) {
-            process.exit(e.status);
-        } else if (e instanceof UsageError || e instanceof UnknownError) {
-            console.error(`${module.exports.name}: error: ${e.message}`);
-            process.exit(5);
-        } else if (e instanceof ConfigurationError) {
-            console.error(`${module.exports.name}: could not parse configuration: ${e.message}`);
-            process.exit(6);
-        } else {
-            throw e;
-        }
+        handleError(e);
+    }
+}
+
+function handleError(e) {
+    if (e instanceof ExitError) {
+        process.exit(e.status);
+    } else if (e instanceof UsageError || e instanceof UnknownError) {
+        console.error(`${module.exports.name}: error: ${e.message}`);
+        process.exit(5);
+    } else if (e instanceof ConfigurationError) {
+        console.error(`${module.exports.name}: could not parse configuration: ${e.message}`);
+        process.exit(6);
+    } else {
+        throw e;
     }
 }
 
@@ -325,7 +329,8 @@ function _run(args, config, options) {
                     output.write(crypt.encryptRaw(buf));
                     output.write('\n');
                 } else {
-                    const result = tryDecrypt(opts, keys, crypt => crypt.decryptRaw(buf));
+                    const str = buf.toString("utf8");
+                    const result = tryDecrypt(opts, keys, crypt => crypt.decryptRaw(str));
                     output.write(result);
                 }
             } else {
@@ -357,7 +362,11 @@ function _run(args, config, options) {
 
 function readInput(input, callback) {
     if (typeof input === 'string' || input instanceof String || Buffer.isBuffer(input)) {
-        callback(input);
+        try {
+            callback(input);
+        } catch (e) {
+            handleError(e);
+        }
     } else {
         const ret = [];
         let len = 0;
@@ -369,7 +378,11 @@ function readInput(input, callback) {
             }
         });
         input.on('end', () => {
-            callback(Buffer.concat(ret, len));
+            try {
+                callback(Buffer.concat(ret, len));
+            } catch (e) {
+                handleError(e);
+            }
         });
     }
 }
@@ -579,7 +592,7 @@ function tryDecrypt(opts, keys, callback) {
     if (success) {
         return result;
     } else {
-        throw new Error('no matching key to decrypt the given data!');
+        throw new UsageError('no matching key to decrypt the given data!');
     }
 }
 
