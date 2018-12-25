@@ -1,0 +1,49 @@
+export as namespace yamlcrypt;
+
+export const algorithms: Algorithm[];
+
+export function generateKey(algorithm?: Algorithm): string;
+
+export async function loadConfig(path?: string): Promise<Config>;
+
+export function loadConfigSync(path?: string): Config;
+
+export function yamlcrypt(opts?: YamlcryptOptions): Yamlcrypt;
+
+export type Algorithm = "fernet:0x80" | "fernet" | "branca:0xBA" | "branca";
+
+export interface Config extends YamlcryptOptions {}
+
+export interface YamlcryptOptions {
+  keys?: Key | Key[];
+  encryptionKey?: Key;
+}
+
+export type Key =
+  | string
+  | {
+      key: string;
+      name?: string;
+    };
+
+export interface Yamlcrypt {
+  encrypt(str: string, opts?: EncryptOptions): string;
+
+  encryptAll(str: string, opts?: EncryptOptions): string;
+
+  decrypt(str: string, opts?: DecryptOptions): any;
+
+  decryptAll(str: string, opts?: DecryptOptions): any[];
+}
+
+export interface EncryptOptions {
+  encryptionKey?: string;
+  algorithm?: Algorithm;
+  raw?: boolean;
+  base64?: boolean;
+}
+
+export interface DecryptOptions {
+  keys?: string[];
+  base64?: boolean;
+}

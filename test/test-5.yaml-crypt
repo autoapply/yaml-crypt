@@ -1,0 +1,8 @@
+nested:
+  object:
+    - with: 1
+    - some: 2
+    - array:
+        values:
+          str: !<!yaml-crypt/fernet:0x80> >-
+            gAAAAAAAAAABAAECAwQFBgcICQoLDA0ODzjOnkJEZ7hHk5YOIQNxL8_PdTDxFii3sQCqTs72_cSdXWEMD25WBeAD_cXFu3x_MQ==

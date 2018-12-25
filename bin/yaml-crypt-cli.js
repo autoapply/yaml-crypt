@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* eslint-disable no-console */
+
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
@@ -10,8 +12,8 @@ const tmp = require('tmp');
 const argparse = require('argparse');
 const yaml = require('js-yaml');
 
-const yamlcrypt = require('../lib/yaml-crypt');
-const yamlcryptHelper = require('../lib/yaml-crypt-helper');
+const { algorithms, generateKey, yamlcrypt, encrypt, decrypt } = require('../lib/yaml-crypt');
+const { UsageError, safeDumpAll, tryDecrypt } = require('../lib/utils');
 
 require('pkginfo')(module);
 
@@ -210,14 +212,8 @@ function run(argv, config = {}, options = {}) {
     if (args.raw && args.path) {
         throw new UsageError('cannot combine --raw and --path!');
     }
-    if (args.raw && args.file.length) {
-        throw new UsageError('no files may be given when --raw is used!');
-    }
     if (args.edit && args.path) {
         throw new UsageError('cannot combine --edit and --path!');
-    }
-    if (args.edit && args.raw) {
-        throw new UsageError('cannot combine --edit and --raw!');
     }
     if (args.edit && args.keep) {
         throw new UsageError('cannot combine --edit and --keep!');
@@ -259,13 +255,13 @@ function run(argv, config = {}, options = {}) {
 
 function _run(args, config, options) {
     let algorithm = null;
-    for (const a of yamlcrypt.algorithms) {
+    for (const a of algorithms) {
         if (a === args.algorithm || a.startsWith(`${args.algorithm}:`)) {
             algorithm = a;
             break;
         }
     }
-    if (args.algorithm && !algorithm) {
+    if (args.algorithm && algorithm == null) {
         throw new UsageError(`unknown encryption algorithm: ${args.algorithm}`);
     }
     let input;
@@ -298,7 +294,7 @@ function _run(args, config, options) {
         ? readKey(configKeys, args.K)
         : (keys.length === 1 ? keys[0] : null));
     if (args.generate_key) {
-        const key = yamlcrypt.generateKey(algorithm);
+        const key = generateKey(algorithm);
         output.write(key);
         output.write('\n');
     } else if (args.edit) {
@@ -310,51 +306,46 @@ function _run(args, config, options) {
             processFileArg(file, keys, encryptionKey, algorithm, args);
         }
     } else {
-        let encrypt;
+        let encrypting;
         if (args.encrypt) {
-            encrypt = true;
+            encrypting = true;
         } else if (args.decrypt) {
-            encrypt = false;
+            encrypting = false;
         } else {
             throw new UsageError('no input files, but no operation (--encrypt/--decrypt) given!');
         }
-        if (encrypt) {
+        if (encrypting) {
             checkEncryptionKey(keys, encryptionKey);
         }
-        const opts = { 'base64': args.base64, 'algorithm': algorithm };
+        const opts = { algorithm, base64: args.base64, path: args.path };
         readInput(input, buf => {
             if (args.raw) {
-                if (encrypt) {
-                    const crypt = yamlcrypt.encrypt(encryptionKey, opts);
-                    output.write(crypt.encryptRaw(buf));
+                if (encrypting) {
+                    const str = (args.base64 ? buf.toString('base64')
+                        : buf.toString('utf8'));
+                    const result = encrypt(algorithm, encryptionKey, str);
+                    output.write(result);
                     output.write('\n');
                 } else {
-                    const str = buf.toString("utf8");
-                    const result = tryDecrypt(opts, keys, crypt => crypt.decryptRaw(str));
+                    const str = buf.toString('utf8');
+                    const decrypted = tryDecrypt(algorithms, keys,
+                        (algorithm, key) => decrypt(algorithm, key, str));
+                    const result = (args.base64
+                        ? Buffer.from(decrypted, 'base64').toString('utf8')
+                        : decrypted);
                     output.write(result);
                 }
             } else {
-                let strs = [];
-                if (encrypt) {
-                    const crypt = yamlcrypt.encrypt(encryptionKey, opts);
-                    yaml.safeLoadAll(buf, obj => {
-                        yamlcryptHelper.processStrings(obj, args.path, str => new yamlcrypt.Plaintext(str));
-                        const encrypted = crypt.safeDump(obj);
-                        strs.push(encrypted);
-                    });
+                const str = buf.toString('utf8');
+                const crypt = yamlcrypt({ keys, encryptionKey });
+                let result;
+                if (encrypting) {
+                    result = crypt.encryptAll(str, opts);
                 } else {
-                    strs = tryDecrypt(opts, keys, crypt => {
-                        const result = [];
-                        crypt.safeLoadAll(buf, obj => result.push(yaml.safeDump(obj)));
-                        return result;
-                    });
+                    const objs = crypt.decryptAll(str, opts);
+                    result = safeDumpAll(objs);
                 }
-                for (let idx = 0; idx < strs.length; idx++) {
-                    if (idx > 0) {
-                        output.write('---\n');
-                    }
-                    output.write(strs[idx]);
-                }
+                output.write(result);
             }
         });
     }
@@ -524,20 +515,20 @@ function processFileArg(file, keys, encryptionKey, algorithm, args) {
 }
 
 function processFile(file, keys, encryptionKey, algorithm, args) {
-    let encrypt;
+    let encrypting;
     if (plaintextFile(file)) {
-        encrypt = true;
+        encrypting = true;
     } else if (encryptedFile(file)) {
-        encrypt = false;
+        encrypting = false;
     } else {
         throw new UsageError(`unknown file extension: ${file}`);
     }
-    if (encrypt && args.decrypt) {
+    if (encrypting && args.decrypt) {
         throw new UsageError(`decrypted file, but --decrypt given: ${file}`);
-    } else if (!encrypt && args.encrypt) {
+    } else if (!encrypting && args.encrypt) {
         throw new UsageError(`encrypted file, but --encrypt given: ${file}`);
     }
-    if (encrypt) {
+    if (encrypting) {
         checkEncryptionKey(keys, encryptionKey);
     }
     let content;
@@ -550,50 +541,25 @@ function processFile(file, keys, encryptionKey, algorithm, args) {
             throw e;
         }
     }
-    const output = (encrypt ? file + '-crypt' : file.substring(0, file.length - '-crypt'.length));
+    const output = (encrypting ? file + '-crypt' : file.substring(0, file.length - '-crypt'.length));
     if (fs.existsSync(output)) {
         throw new UsageError(`output file already exists: ${output}`);
     }
-    let strs = [];
-    const opts = { 'base64': args.base64, 'algorithm': algorithm };
-    if (encrypt) {
-        const crypt = yamlcrypt.encrypt(encryptionKey, opts);
-        yaml.safeLoadAll(content, obj => {
-            yamlcryptHelper.processStrings(obj, args.path, str => new yamlcrypt.Plaintext(str));
-            const encrypted = crypt.safeDump(obj);
-            strs.push(encrypted);
-        });
+
+    const opts = { algorithm, base64: args.base64, path: args.path, raw: args.raw };
+    const crypt = yamlcrypt({ keys, encryptionKey });
+    let result;
+    if (encrypting) {
+        result = crypt.encryptAll(content, opts);
     } else {
-        strs = tryDecrypt(opts, keys, crypt => {
-            const result = [];
-            crypt.safeLoadAll(content, obj => result.push(yaml.safeDump(obj)));
-            return result;
-        });
+        const objs = crypt.decryptAll(content, opts);
+        result = safeDumpAll(objs);
     }
+
     if (!args.keep) {
         fs.renameSync(file, output);
     }
-    writeYaml(strs, output);
-}
-
-function tryDecrypt(opts, keys, callback) {
-    let result = null;
-    let success = false;
-    for (const key of keys) {
-        try {
-            const crypt = yamlcrypt.decrypt(key, opts);
-            result = callback(crypt);
-            success = true;
-            break;
-        } catch (e) {
-            continue;
-        }
-    }
-    if (success) {
-        return result;
-    } else {
-        throw new UsageError('no matching key to decrypt the given data!');
-    }
+    fs.writeFileSync(output, result);
 }
 
 function editFile(file, keys, encryptionKey, algorithm, args, config) {
@@ -618,15 +584,16 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
 
     const tmpFile = tmp.fileSync({ 'dir': dir, 'postfix': '.yaml', 'keep': true });
     try {
-        const opts = { 'base64': args.base64, 'algorithm': algorithm };
-        const transformed = yamlcryptHelper.transform(content, keys, encryptionKey, opts, str => {
+        const opts = { base64: args.base64, algorithm: algorithm, raw: args.raw };
+        const crypt = yamlcrypt({ keys, encryptionKey });
+        const transformed = crypt.transform(content, str => {
             fs.writeSync(tmpFile.fd, str);
             fs.closeSync(tmpFile.fd);
 
             childProcess.spawnSync(editor, [tmpFile.name], { 'stdio': 'inherit' });
 
             return fs.readFileSync(tmpFile.name);
-        });
+        }, opts);
         fs.writeFileSync(tmpFile.name, transformed);
         fs.renameSync(tmpFile.name, file);
     } finally {
@@ -635,22 +602,6 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
         }
     }
 }
-
-function writeYaml(strs, file) {
-    const fd = fs.openSync(file, 'w');
-    try {
-        for (let idx = 0; idx < strs.length; idx++) {
-            if (idx > 0) {
-                fs.writeSync(fd, '---\n');
-            }
-            fs.writeSync(fd, strs[idx]);
-        }
-    } finally {
-        fs.closeSync(fd);
-    }
-}
-
-class UsageError extends Error { }
 
 class UnknownError extends Error { }
 

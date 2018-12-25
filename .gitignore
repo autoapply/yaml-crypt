@@ -4,5 +4,7 @@
 !.travis.yml
 
 *.log
+*.yml
+*.yaml
 
 node_modules/

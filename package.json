@@ -1,6 +1,6 @@
 {
   "name": "yaml-crypt",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "Encrypt and decrypt YAML documents",
   "license": "MIT",
   "author": "Pascal",
@@ -10,6 +10,7 @@
     "url": "https://github.com/autoapply/yaml-crypt.git"
   },
   "main": "./lib/yaml-crypt.js",
+  "types": "./lib/index.d.ts",
   "bin": {
     "yaml-crypt": "./bin/yaml-crypt-cli.js"
   },

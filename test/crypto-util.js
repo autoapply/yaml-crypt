@@ -18,8 +18,8 @@ function setupCrypto() {
     };
 
     // Branca:
-    crypto.brancaDefaults.ts = 1;
-    crypto.brancaDefaults.nonce = Buffer.alloc(24, 1);
+    crypto.__brancaDefaults.ts = 1;
+    crypto.__brancaDefaults.nonce = Buffer.alloc(24, 1);
 }
 
 module.exports.setupCrypto = setupCrypto;
