@@ -2,7 +2,6 @@
 
 /* eslint-disable no-console */
 
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const process = require('process');
@@ -10,9 +9,8 @@ const childProcess = require('child_process');
 
 const tmp = require('tmp');
 const argparse = require('argparse');
-const yaml = require('js-yaml');
 
-const { algorithms, generateKey, yamlcrypt, encrypt, decrypt } = require('../lib/yaml-crypt');
+const { algorithms, loadConfig, generateKey, yamlcrypt, encrypt, decrypt } = require('../lib/yaml-crypt');
 const { UsageError, safeDumpAll, tryDecrypt } = require('../lib/utils');
 
 require('pkginfo')(module);
@@ -20,7 +18,7 @@ require('pkginfo')(module);
 function main() {
     let cfg;
     try {
-        cfg = config();
+        cfg = loadConfig();
     } catch (e) {
         console.warn('could not read config file, using default!');
         if (e.message) {
@@ -46,29 +44,6 @@ function handleError(e) {
         process.exit(6);
     } else {
         throw e;
-    }
-}
-
-function config() {
-    const home = `${os.homedir()}/.yaml-crypt`;
-    let raw = null;
-    for (const filename of ['config.yaml', 'config.yml']) {
-        try {
-            raw = fs.readFileSync(`${home}/${filename}`);
-            break;
-        } catch (e) {
-            if (e.code === 'ENOENT') {
-                continue;
-            } else {
-                throw e;
-            }
-        }
-    }
-    if (raw) {
-        return yaml.safeLoad(raw);
-    } else {
-        // default config
-        return {};
     }
 }
 
@@ -168,7 +143,7 @@ function run(argv, config = {}, options = {}) {
         metavar: '<file>',
         help: 'Input file(s) to process'
     });
-    if (process.argv && process.argv.includes('--help')) {
+    if ((argv && argv.includes('--help')) || (process.argv && process.argv.includes('--help'))) {
         parser.addArgumentGroup({
             title: 'Configuration file',
             description: 'During startup, yaml-crypt will look for a configuration file '

@@ -4,9 +4,12 @@ export const algorithms: Algorithm[];
 
 export function generateKey(algorithm?: Algorithm): string;
 
-export async function loadConfig(path?: string): Promise<Config>;
+export function loadConfig(opts?: LoadConfigOptions): Config;
 
-export function loadConfigSync(path?: string): Config;
+export interface LoadConfigOptions {
+  path?: string;
+  home?: string;
+}
 
 export function yamlcrypt(opts?: YamlcryptOptions): Yamlcrypt;
 
@@ -34,6 +37,12 @@ export interface Yamlcrypt {
   decrypt(str: string, opts?: DecryptOptions): any;
 
   decryptAll(str: string, opts?: DecryptOptions): any[];
+
+  transform(
+    str: string,
+    callback: (string) => string,
+    opts?: EncryptOptions & DecryptOptions
+  ): string;
 }
 
 export interface EncryptOptions {

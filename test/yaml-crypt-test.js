@@ -6,11 +6,39 @@ const it = mocha.it;
 const chai = require('chai');
 const expect = chai.expect;
 
-const { yamlcrypt } = require('../lib/yaml-crypt');
+const tmp = require('tmp');
+
+const { loadConfig, yamlcrypt } = require('../lib/yaml-crypt');
 
 require('./crypto-util').setupCrypto();
 
 describe('yaml-crypt', () => {
+    it('should load the config file', () => {
+        const config = loadConfig();
+        expect(config).to.not.be.null;
+    });
+
+    it('should load the config file from the given path', () => {
+        const configFile = tmp.fileSync();
+        fs.writeFileSync(configFile.name, 'keys:\n  - key: 123');
+        const config = loadConfig({ path: configFile.name });
+        expect(config).to.not.be.null;
+    });
+
+    it('should load the config file from home', () => {
+        const home = tmp.dirSync();
+        fs.writeFileSync(`${home.name}/config.yml`, 'keys:\n  - key: 123');
+        const config = loadConfig({ home: home.name });
+        expect(config).to.not.be.null;
+        expect(config.keys).to.have.lengthOf(1);
+    });
+
+    it('should throw an error when the config file is not readable', () => {
+        const home = tmp.dirSync();
+        fs.mkdirSync(`${home.name}/config.yaml`);
+        expect(() => loadConfig({ home: home.name })).to.throw(/illegal operation/);
+    });
+
     it('should read the decrypted content', () => {
         const yaml = yamlcrypt({ keys: 'aehae5Ui0Eechaeghau9Yoh9jufiep7H' });
         const content = fs.readFileSync('./test/test-1b.yaml-crypt');

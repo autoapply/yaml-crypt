@@ -8,3 +8,4 @@
 *.yaml
 
 node_modules/
+coverage/

@@ -12,7 +12,7 @@
   "rules": {
     "semi": "error",
     "no-tabs": "error",
-    "no-console": "off",
+    "no-console": "warn",
     "no-constant-condition": "off"
   }
 }

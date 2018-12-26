@@ -28,6 +28,16 @@ class Out {
 }
 
 describe('yaml-crypt-cli', () => {
+    it('should display a message about details when giving -h', () => {
+        const stdout = new Out();
+        try {
+            yamlcryptcli.run(['-h'], {}, { stdout });
+        } catch (e) {
+            // ignore
+        }
+        expect(stdout.str).to.contain('For more details, specify --help');
+    });
+
     it('should throw an error when using --unknown-option', () => {
         expect(() => yamlcryptcli.run(['--unknown-option'], {}, { 'stdout': new Out() }))
             .to.throw().with.property('status', 2);
@@ -38,9 +48,18 @@ describe('yaml-crypt-cli', () => {
             .to.throw().with.property('status', 0);
     });
 
-    it('should throw an error when using --path and --raw', () => {
-        expect(() => runWithKeyFile(['--path', 'x', '--raw'], {}, { 'stdout': new Out() }))
-            .to.throw(/cannot combine/);
+    it('should throw an error when combining invalid flags', () => {
+        const invalid = [
+            ['--raw', '--path', '.'],
+            ['--edit', '--encrypt'],
+            ['--edit', '--decrypt'],
+            ['--edit', '--keep'],
+            ['--generate-key', '-e'],
+            ['--generate-key', '-d']
+        ];
+        for (const args of invalid) {
+            expect(() => runWithKeyFile(args, {}, {})).to.throw(/cannot combine/);
+        }
     });
 
     it('should throw an error when passing directory without --dir', () => {
@@ -51,6 +70,11 @@ describe('yaml-crypt-cli', () => {
     it('should throw an error when passing non-existing files to --edit', () => {
         expect(() => runWithKeyFile(['--edit', 'x.yaml-crypt'], {}, { 'stdout': new Out() }))
             .to.throw(/file does not exist/);
+    });
+
+    it('should throw an error when passing invalid algorithm', () => {
+        expect(() => runWithKeyFile(['-d', '-a', 'x'], {}, {}))
+            .to.throw(/unknown encryption algorithm/);
     });
 
     it('should throw an error when encrypting with two keys', () => {
@@ -106,6 +130,18 @@ describe('yaml-crypt-cli', () => {
         expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
     });
 
+    it('should decrypt the given directory', () => {
+        const tmpdir = tmp.dirSync();
+        fs.copyFileSync('./test/test-2a.yaml-crypt', `${tmpdir.name}/1.yaml-crypt`);
+        fs.copyFileSync('./test/test-2a.yaml-crypt', `${tmpdir.name}/2.yml-crypt`);
+        runWithKeyFile(['--dir', tmpdir.name], {}, { 'stdout': new Out() });
+        const expected = fs.readFileSync('./test/test-2.yaml');
+        const output1 = fs.readFileSync(`${tmpdir.name}/1.yaml`);
+        const output2 = fs.readFileSync(`${tmpdir.name}/2.yml`);
+        expect(output1.toString('utf8')).to.equal(expected.toString('utf8'));
+        expect(output2.toString('utf8')).to.equal(expected.toString('utf8'));
+    });
+
     it('should encrypt only parts of the YAML file when using --path', () => {
         const input = tmp.fileSync({ 'postfix': '.yaml' });
         fs.writeSync(input.fd, yaml.safeDump({ 'a': { 'b': { 'c': 'secret' } }, 'x': 'plain' }));
@@ -134,6 +170,18 @@ describe('yaml-crypt-cli', () => {
         fs.writeSync(keyFile.fd, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
         return yamlcryptcli.run(['--debug', '-k', keyFile.name].concat(argv), config, options);
     }
+
+    it('should decrypt the given YAML file (key passed via fd)', () => {
+        const input = tmp.fileSync({ 'postfix': '.yaml-crypt' });
+        fs.copyFileSync('./test/test-2a.yaml-crypt', input.name);
+        const keyFile = tmp.fileSync();
+        fs.writeFileSync(keyFile.name, 'aehae5Ui0Eechaeghau9Yoh9jufiep7H');
+        const fd = fs.openSync(keyFile.name, 'r');
+        yamlcryptcli.run(['--debug', '-k', `fd:${fd}`, input.name], {}, { 'stdout': new Out() });
+        const output = fs.readFileSync(input.name.substring(0, input.name.length - '-crypt'.length));
+        const expected = fs.readFileSync('./test/test-2.yaml');
+        expect(output.toString('utf8')).to.equal(expected.toString('utf8'));
+    });
 
     it('should throw an error when no matching key is available', () => {
         const keyFile = tmp.fileSync();
