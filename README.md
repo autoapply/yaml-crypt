@@ -88,6 +88,13 @@ are given on the command line:
 
 All whitespaces at the beginning and end of keys will be removed when reading keys.
 
+## Related projects
+
+- https://github.com/mozilla/sops
+- https://github.com/huwtl/secure_yaml
+- https://github.com/StackExchange/blackbox
+- https://github.com/bitnami-labs/sealed-secrets
+
 ## License
 
 The yaml-crypt tool is licensed under the MIT License
