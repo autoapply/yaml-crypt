@@ -27,7 +27,11 @@ describe("yaml-crypt", () => {
 
   it("should load the config file from home", () => {
     const home = tmp.dirSync();
-    fs.writeFileSync(`${home.name}/config.yml`, "keys:\n  - key: 123");
+    fs.mkdirSync(`${home.name}/.yaml-crypt`);
+    fs.writeFileSync(
+      `${home.name}/.yaml-crypt/config.yml`,
+      "keys:\n  - key: 123"
+    );
     const config = loadConfig({ home: home.name });
     expect(config).to.not.be.null;
     expect(config.keys).to.have.lengthOf(1);
@@ -35,7 +39,8 @@ describe("yaml-crypt", () => {
 
   it("should throw an error when the config file is not readable", () => {
     const home = tmp.dirSync();
-    fs.mkdirSync(`${home.name}/config.yaml`);
+    fs.mkdirSync(`${home.name}/.yaml-crypt`);
+    fs.mkdirSync(`${home.name}/.yaml-crypt/config.yaml`);
     expect(() => loadConfig({ home: home.name })).to.throw(/illegal operation/);
   });
 
