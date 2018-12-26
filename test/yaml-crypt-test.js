@@ -44,6 +44,13 @@ describe("yaml-crypt", () => {
     expect(() => loadConfig({ home: home.name })).to.throw(/illegal operation/);
   });
 
+  it("should return the default config file", () => {
+    const home = tmp.dirSync();
+    const config = loadConfig({ home: home.name });
+    expect(config).to.not.be.null;
+    expect(config.keys).to.be.undefined;
+  });
+
   it("should read the decrypted content", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
     const content = fs.readFileSync("./test/test-1b.yaml-crypt");
