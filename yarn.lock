@@ -232,10 +232,10 @@ brace-expansion@^1.1.7:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
 
-branca@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/branca/-/branca-0.2.0.tgz#763d3b55eddfaf84dac1f0a74997e35c4f58f2cd"
-  integrity sha512-bxu8wNLuem491D0NTzlQSKCbI/s3NbS2ekojfswSbDKgsRuGw+Aqrs03r3ZMDj7I8PBPb6IfdyD4mLzxuAUSKw==
+branca@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/branca/-/branca-0.3.0.tgz#5db6a2b1b0f8ad53c5ee78fa712d4195b38033a6"
+  integrity sha512-L8lTyi9bLf/o6qzT+H3B4/leCBhRmxwbcXfDC82TKs+lO1HJzImGmvHFVPBnBBrsOHKsHE01O+G4YI96GKUcTQ==
   dependencies:
     base-x "^3.0.2"
     bufferpack "^0.0.6"
