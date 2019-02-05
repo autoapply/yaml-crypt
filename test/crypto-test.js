@@ -7,8 +7,9 @@ const chai = require("chai");
 const expect = chai.expect;
 
 const crypto = require("../lib/crypto");
+const { setupCrypto, decryptBranca } = require("./crypto-util");
 
-require("./crypto-util").setupCrypto();
+setupCrypto();
 
 describe("crypto", () => {
   it("should return the encrypted content (fernet)", () => {
@@ -23,14 +24,10 @@ describe("crypto", () => {
   });
 
   it("should return the encrypted content (branca)", () => {
-    const result = crypto.encrypt(
-      "branca",
-      "aehae5Ui0Eechaeghau9Yoh9jufiep7H",
-      "Hello, world!"
-    );
-    expect(result).to.equal(
-      "XUvrtHkyXTh1VUW885Ta4V5eQ3hBMFQMC3S3QwEfWzKWVDt3A5TnVUNtVXubi0fsAA8eerahpobwC8"
-    );
+    const key = "aehae5Ui0Eechaeghau9Yoh9jufiep7H";
+    const result = crypto.encrypt("branca", key, "Hello, world!");
+    expect(result).to.be.not.empty;
+    expect(decryptBranca(key, result)).to.equal("Hello, world!");
   });
 
   it("should generate a key (branca)", () => {

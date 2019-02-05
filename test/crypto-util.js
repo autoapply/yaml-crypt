@@ -1,6 +1,5 @@
-const crypto = require("../lib/crypto");
-
 const fernet = require("fernet");
+const branca = require("branca");
 
 /**
  * Ensures the crypto calls are reproducible
@@ -16,10 +15,12 @@ function setupCrypto() {
   fernet.Token.prototype.setTime = function() {
     setTime.apply(this, [1000]);
   };
-
-  // Branca:
-  crypto.__brancaDefaults.ts = 1;
-  crypto.__brancaDefaults.nonce = Buffer.alloc(24, 1);
 }
 
-module.exports.setupCrypto = setupCrypto;
+function decryptBranca(key, msg) {
+  return branca(key)
+    .decode(msg)
+    .toString();
+}
+
+module.exports = { setupCrypto, decryptBranca };
