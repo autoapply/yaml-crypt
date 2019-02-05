@@ -22,10 +22,10 @@ const { UsageError, safeDumpAll, tryDecrypt } = require("../lib/utils");
 
 require("pkginfo")(module);
 
-function main() {
+async function main() {
   let cfg;
   try {
-    cfg = loadConfig();
+    cfg = await loadConfig();
   } catch (e) {
     console.warn("could not read config file, using default!");
     if (e.message) {
@@ -42,15 +42,15 @@ function main() {
 
 function handleError(e) {
   if (e instanceof ExitError) {
-    process.exit(e.status);
+    process.exitCode = e.status;
   } else if (e instanceof UsageError || e instanceof UnknownError) {
     console.error(`${module.exports.name}: error: ${e.message}`);
-    process.exit(5);
+    process.exitCode = 5;
   } else if (e instanceof ConfigurationError) {
     console.error(
       `${module.exports.name}: could not parse configuration: ${e.message}`
     );
-    process.exit(6);
+    process.exitCode = 6;
   } else {
     throw e;
   }
@@ -645,5 +645,8 @@ class ExitError extends Error {
 module.exports.run = run;
 
 if (require.main === module) {
-  main();
+  main().catch(e => {
+    process.exitCode = 1;
+    console.error(e);
+  });
 }
