@@ -4,7 +4,14 @@ export const algorithms: Algorithm[];
 
 export function generateKey(algorithm?: Algorithm): string;
 
-export function loadConfig(opts?: LoadConfigOptions): Config;
+export function loadFile(path: string, opts?: LoadFileOptions): Promise<any>;
+
+export interface LoadFileOptions {
+  config?: Config;
+  loadAll?: boolean;
+}
+
+export function loadConfig(opts?: LoadConfigOptions): Promise<Config>;
 
 export interface LoadConfigOptions {
   path?: string;

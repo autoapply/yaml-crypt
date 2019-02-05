@@ -8,48 +8,70 @@ const expect = chai.expect;
 
 const tmp = require("tmp");
 
-const { loadConfig, yamlcrypt } = require("../lib/yaml-crypt");
+const { loadFile, loadConfig, yamlcrypt } = require("../lib/yaml-crypt");
 const { setupCrypto, decryptBranca } = require("./crypto-util");
 
 setupCrypto();
 
 describe("yaml-crypt", () => {
-  it("should load the config file", () => {
-    const config = loadConfig();
+  it("should load the config file", async () => {
+    const config = await loadConfig();
     expect(config).to.not.be.null;
   });
 
-  it("should load the config file from the given path", () => {
+  it("should load the config file from the given path", async () => {
     const configFile = tmp.fileSync();
     fs.writeFileSync(configFile.name, "keys:\n  - key: 123");
-    const config = loadConfig({ path: configFile.name });
+    const config = await loadConfig({ path: configFile.name });
     expect(config).to.not.be.null;
   });
 
-  it("should load the config file from home", () => {
+  it("should load the config file from home", async () => {
     const home = tmp.dirSync();
     fs.mkdirSync(`${home.name}/.yaml-crypt`);
     fs.writeFileSync(
       `${home.name}/.yaml-crypt/config.yml`,
       "keys:\n  - key: 123"
     );
-    const config = loadConfig({ home: home.name });
+    const config = await loadConfig({ home: home.name });
     expect(config).to.not.be.null;
     expect(config.keys).to.have.lengthOf(1);
   });
 
-  it("should throw an error when the config file is not readable", () => {
+  it("should throw an error when the config file is not readable", async () => {
     const home = tmp.dirSync();
     fs.mkdirSync(`${home.name}/.yaml-crypt`);
     fs.mkdirSync(`${home.name}/.yaml-crypt/config.yaml`);
-    expect(() => loadConfig({ home: home.name })).to.throw(/illegal operation/);
+    try {
+      await loadConfig({ home: home.name });
+      expect.fail("exception expected!");
+    } catch (e) {
+      expect(e.message).to.match(/illegal operation/);
+    }
   });
 
-  it("should return the default config file", () => {
+  it("should return the default config file", async () => {
     const home = tmp.dirSync();
-    const config = loadConfig({ home: home.name });
+    const config = await loadConfig({ home: home.name });
     expect(config).to.not.be.null;
     expect(config.keys).to.be.undefined;
+  });
+
+  it("should read the decrypted content via loadFile", async () => {
+    const config = { keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" };
+    const result = await loadFile("./test/test-1b.yaml-crypt", { config });
+    expect(result.key1.toString()).to.equal("Hello, world!");
+    expect(result.key2.toString()).to.equal("Hello, world!");
+  });
+
+  it("should read the decrypted content via loadFile (all)", async () => {
+    const config = { keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" };
+    const result = await loadFile("./test/test-2.yaml-crypt", {
+      config,
+      loadAll: true
+    });
+    expect(result[0].first.toString()).to.equal("Hello, world!");
+    expect(result[1].other.toString()).to.equal("Hello, world!");
   });
 
   it("should read the decrypted content", () => {
