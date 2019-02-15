@@ -1,6 +1,6 @@
 {
   "name": "yaml-crypt",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Encrypt and decrypt YAML documents",
   "license": "MIT",
   "author": "Pascal",
@@ -36,7 +36,7 @@
     "coveralls": "^3.0.0",
     "eslint": "^5.11.0",
     "mocha": "^5.1.0",
-    "nyc": "^13.2.0",
+    "nyc": "^13.3.0",
     "prettier": "^1.15.3"
   }
 }
