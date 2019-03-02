@@ -154,6 +154,10 @@ function run(argv, config = {}, options = {}) {
     action: "storeTrue",
     help: "Keep the original files after encryption/decryption"
   });
+  parser.addArgument(["-f", "--force"], {
+    action: "storeTrue",
+    help: "Overwrite existing files"
+  });
   parser.addArgument(["file"], {
     nargs: "*",
     metavar: "<file>",
@@ -559,7 +563,7 @@ function processFile(file, keys, encryptionKey, algorithm, args) {
   const output = encrypting
     ? file + "-crypt"
     : file.substring(0, file.length - "-crypt".length);
-  if (fs.existsSync(output)) {
+  if (fs.existsSync(output) && !args.force) {
     throw new UsageError(`output file already exists: ${output}`);
   }
 

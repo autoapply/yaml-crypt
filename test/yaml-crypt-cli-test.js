@@ -145,6 +145,30 @@ describe("yaml-crypt-cli", () => {
     expect(output.toString("utf8")).to.equal(expected.toString("utf8"));
   });
 
+  it("should throw an error when the output file exists", () => {
+    const tmpdir = tmp.dirSync();
+    fs.copyFileSync("./test/test-2.yaml-crypt", `${tmpdir.name}/2.yaml-crypt`);
+    fs.copyFileSync("./test/test-2.yaml", `${tmpdir.name}/2.yaml`);
+    expect(() =>
+      runWithKeyFile(
+        ["-d", `${tmpdir.name}/2.yaml-crypt`],
+        {},
+        { stdout: new Out() }
+      )
+    ).to.throw(/output file already exists/);
+  });
+
+  it("should succeed when the output file exists and -f is given", () => {
+    const tmpdir = tmp.dirSync();
+    fs.copyFileSync("./test/test-2.yaml-crypt", `${tmpdir.name}/2.yaml-crypt`);
+    fs.copyFileSync("./test/test-2.yaml", `${tmpdir.name}/2.yaml`);
+    runWithKeyFile(
+      ["-d", "--force", `${tmpdir.name}/2.yaml-crypt`],
+      {},
+      { stdout: new Out() }
+    );
+  });
+
   it("should decrypt the given directory", () => {
     const tmpdir = tmp.dirSync();
     fs.copyFileSync("./test/test-2.yaml-crypt", `${tmpdir.name}/1.yaml-crypt`);
