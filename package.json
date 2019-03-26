@@ -28,7 +28,7 @@
     "fernet": "^0.3.1",
     "js-yaml": "^3.13.0",
     "pkginfo": "^0.4.1",
-    "tmp": "^0.0.33",
+    "tmp": "^0.1.0",
     "urlsafe-base64": "^1.0.0"
   },
   "devDependencies": {
