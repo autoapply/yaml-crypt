@@ -4,5 +4,7 @@ os:
   - osx
 node_js:
   - "8"
+  - "10"
+  - "12"
   - "node"
 after_success: yarn coverage

@@ -55,7 +55,8 @@ data:
 
 you can use `--path data` to only encrypt the values `user1` and `secret123`.
 
->[Kubernetes](https://kubernetes.io/) secrets are Base64 encoded, so you should also use the `--base64` option.
+>[Kubernetes](https://kubernetes.io/) secrets are Base64 encoded,
+>so you should also use the `--base64` (or `-B`) option.
 
 It is also possible to directly open encrypted files in an editor, decrypting them
 before opening and encrypting again when saving:
@@ -70,7 +71,7 @@ unencrypted:
 encrypted:
   key1: !<!yaml-crypt/:0> secret-key-1
   # add the following line to add a new encrypted entry "key2" to the file,
-  # which will be encrypted before being written to disk:
+  # which will be encrypted in the yaml-crypt file:
   key2: !<!yaml-crypt> secret123
 ```
 
