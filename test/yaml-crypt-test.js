@@ -59,14 +59,16 @@ describe("yaml-crypt", () => {
 
   it("should read the decrypted content via loadFile", async () => {
     const config = { keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" };
-    const result = await loadFile("./test/test-1b.yaml-crypt", { config });
+    const result = await loadFile("./test/resources/test-1b.yaml-crypt", {
+      config
+    });
     expect(result.key1.toString()).to.equal("Hello, world!");
     expect(result.key2.toString()).to.equal("Hello, world!");
   });
 
   it("should read the decrypted content via loadFile (all)", async () => {
     const config = { keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" };
-    const result = await loadFile("./test/test-2.yaml-crypt", {
+    const result = await loadFile("./test/resources/test-2.yaml-crypt", {
       config,
       loadAll: true
     });
@@ -76,7 +78,7 @@ describe("yaml-crypt", () => {
 
   it("should read the decrypted content", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content = fs.readFileSync("./test/test-1b.yaml-crypt");
+    const content = fs.readFileSync("./test/resources/test-1b.yaml-crypt");
     const result = yaml.decrypt(content);
     expect(result.key1.toString()).to.equal("Hello, world!");
     expect(result.key2.toString()).to.equal("Hello, world!");
@@ -84,14 +86,14 @@ describe("yaml-crypt", () => {
 
   it("should read the decrypted raw content (string)", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content = fs.readFileSync("./test/test-7.yaml-crypt");
+    const content = fs.readFileSync("./test/resources/test-7.yaml-crypt");
     const result = yaml.decrypt(content);
     expect(result).to.equal("Hello!");
   });
 
   it("should read the decrypted raw content (Buffer)", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content = fs.readFileSync("./test/test-7.yaml-crypt");
+    const content = fs.readFileSync("./test/resources/test-7.yaml-crypt");
     const result = yaml.decryptAll(content.toString());
     expect(result[0]).to.equal("Hello!");
   });
@@ -103,7 +105,7 @@ describe("yaml-crypt", () => {
     const str = '{ key1: "Hello, world!", key2: "Hello, world!" }';
     const result = yaml.encrypt(str);
     const expected = fs
-      .readFileSync("./test/test-1a.yaml-crypt")
+      .readFileSync("./test/resources/test-1a.yaml-crypt")
       .toString("utf8");
     expect(result).to.equal(expected);
   });
@@ -124,21 +126,21 @@ describe("yaml-crypt", () => {
     });
     const result = yaml.encryptAll("base64: Hello, world!", { base64: true });
     const expected = fs
-      .readFileSync("./test/test-4.yaml-crypt")
+      .readFileSync("./test/resources/test-4.yaml-crypt")
       .toString("utf8");
     expect(result).to.equal(expected);
   });
 
   it("should read the decrypted base64 content", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content = fs.readFileSync("./test/test-4.yaml-crypt");
+    const content = fs.readFileSync("./test/resources/test-4.yaml-crypt");
     const result = yaml.decryptAll(content, { base64: true })[0];
     expect(result.base64.toString()).to.equal("Hello, world!");
   });
 
   it("should correctly transform the nested content", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content = fs.readFileSync("./test/test-5.yaml-crypt");
+    const content = fs.readFileSync("./test/resources/test-5.yaml-crypt");
     let decrypted = null;
     yaml.transform(content, str => (decrypted = str));
     expect(decrypted).to.contain("str: !<!yaml-crypt/:0> Hello!");
@@ -146,7 +148,7 @@ describe("yaml-crypt", () => {
 
   it("should re-encrypt transformed content", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content1 = fs.readFileSync("./test/test-6.yaml-crypt");
+    const content1 = fs.readFileSync("./test/resources/test-6.yaml-crypt");
     const transformed = yaml.transform(content1, str =>
       str.replace("Hello!", "Hello, world!")
     );
@@ -155,7 +157,7 @@ describe("yaml-crypt", () => {
 
   it("should encrypt new content when transforming", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const expected = fs.readFileSync("./test/test-1a.yaml-crypt");
+    const expected = fs.readFileSync("./test/resources/test-1a.yaml-crypt");
     const newContent =
       "key1: !<!yaml-crypt/fernet> Hello, world!\nkey2: !<!yaml-crypt/fernet> Hello, world!";
     const transformed = yaml.transform("", () => newContent);
@@ -164,14 +166,14 @@ describe("yaml-crypt", () => {
 
   it("should not re-encrypt unchanged content when transforming", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content = fs.readFileSync("./test/test-7.yaml-crypt");
+    const content = fs.readFileSync("./test/resources/test-7.yaml-crypt");
     const transformed = yaml.transform(content, str => str);
     expect(transformed).to.equal(content);
   });
 
   it("should re-encrypt transformed raw content", () => {
     const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
-    const content = fs.readFileSync("./test/test-7.yaml-crypt");
+    const content = fs.readFileSync("./test/resources/test-7.yaml-crypt");
     const transformed = yaml.transform(content, str =>
       str.replace("Hello!", "Hello, world!")
     );

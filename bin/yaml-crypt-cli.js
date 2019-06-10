@@ -19,6 +19,7 @@ const {
   decrypt
 } = require("../lib/yaml-crypt");
 const { UsageError, safeDumpAll, tryDecrypt } = require("../lib/utils");
+const { walk } = require("../lib/yaml-crypt-helper");
 
 require("pkginfo")(module);
 
@@ -148,7 +149,17 @@ function run(argv, config = {}, options = {}) {
   parser.addArgument(["-D", "--dir"], {
     action: "storeTrue",
     help:
-      "Allows to pass directories as input, will process all files within the given directories (non-recursive)"
+      "Allows to pass directories as input, process all files within the given directories (non-recursive)"
+  });
+  parser.addArgument(["-R", "--recursive"], {
+    action: "storeTrue",
+    help:
+      "Allows to pass directories as input, process all files within the given directories and subdirectories recursively"
+  });
+  parser.addArgument(["--continue"], {
+    action: "storeTrue",
+    help:
+      "Continue processing even when encryption/decryption of one or more files failed"
   });
   parser.addArgument(["--keep"], {
     action: "storeTrue",
@@ -226,6 +237,9 @@ function run(argv, config = {}, options = {}) {
   }
   if (args.edit && args.decrypt) {
     throw new UsageError("cannot combine --edit and --decrypt!");
+  }
+  if (args.dir && args.recursive) {
+    throw new UsageError("cannot combine --dir and --recursive!");
   }
   if (args.edit && !args.file.length) {
     throw new UsageError("option --edit used, but no files given!");
@@ -308,7 +322,7 @@ function _run(args, config, options) {
     }
   } else if (args.file.length) {
     for (const file of args.file) {
-      processFileArg(file, keys, encryptionKey, algorithm, args);
+      processFileArg(file, keys, encryptionKey, algorithm, args, options);
     }
   } else {
     let encrypting;
@@ -506,34 +520,48 @@ function encryptedFile(file) {
   return file.endsWith(".yaml-crypt") || file.endsWith(".yml-crypt");
 }
 
-function processFileArg(file, keys, encryptionKey, algorithm, args) {
+function processFileArg(file, keys, encryptionKey, algorithm, args, options) {
   const stat = fs.statSync(file);
   if (stat.isDirectory()) {
-    if (args.dir) {
-      fs.readdirSync(file)
-        .filter(f => {
-          if (args.encrypt) {
-            return plaintextFile(f);
-          } else if (args.decrypt) {
-            return encryptedFile(f);
-          } else {
-            return plaintextFile(f) || encryptedFile(f);
-          }
-        })
-        .forEach(f =>
-          processFile(file + "/" + f, keys, encryptionKey, algorithm, args)
-        );
+    if (args.dir || args.recursive) {
+      walk(file, args.recursive, f => {
+        if (args.encrypt && !plaintextFile(f)) {
+          return;
+        } else if (args.decrypt && !encryptedFile(f)) {
+          return;
+        } else if (!plaintextFile(f) && !encryptedFile(f)) {
+          return;
+        } else {
+          processFile(f, keys, encryptionKey, algorithm, args, options);
+        }
+      });
     } else {
       throw new UsageError(
-        `directories will be skipped unless --dir given: ${file}`
+        `directories will be skipped unless --dir or --recursive given: ${file}`
       );
     }
   } else {
-    processFile(file, keys, encryptionKey, algorithm, args);
+    processFile(file, keys, encryptionKey, algorithm, args, options);
   }
 }
 
-function processFile(file, keys, encryptionKey, algorithm, args) {
+function processFile(file, keys, encryptionKey, algorithm, args, options) {
+  try {
+    doProcessFile(file, keys, encryptionKey, algorithm, args);
+  } catch (e) {
+    if (args["continue"]) {
+      if (options.stderr) {
+        options.stderr.write(`error: ${e.message}`);
+      } else {
+        console.error(`error: ${e.message}`);
+      }
+    } else {
+      throw e;
+    }
+  }
+}
+
+function doProcessFile(file, keys, encryptionKey, algorithm, args) {
   let encrypting;
   if (plaintextFile(file)) {
     encrypting = true;

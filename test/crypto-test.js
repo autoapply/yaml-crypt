@@ -76,12 +76,14 @@ describe("crypto", () => {
   });
 
   it("should correctly identify valid string tokens (branca)", () => {
-    const token = fs.readFileSync("./test/test-7.yaml-crypt").toString();
+    const token = fs
+      .readFileSync("./test/resources/test-7.yaml-crypt")
+      .toString();
     expect(crypto.isToken(token)).to.equal(true);
   });
 
   it("should correctly identify valid Buffer tokens (branca)", () => {
-    const token = fs.readFileSync("./test/test-7.yaml-crypt");
+    const token = fs.readFileSync("./test/resources/test-7.yaml-crypt");
     expect(crypto.isToken(token)).to.equal(true);
   });
 

@@ -119,16 +119,16 @@ describe("yaml-crypt-cli", () => {
 
   it("should encrypt the given YAML file (fernet)", () => {
     const input = tmp.fileSync({ postfix: ".yaml" });
-    fs.copyFileSync("./test/test-2.yaml", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml", input.name);
     runWithKeyFile([input.name], {}, { stdout: new Out() });
     const output = fs.readFileSync(input.name + "-crypt");
-    const expected = fs.readFileSync("./test/test-2.yaml-crypt");
+    const expected = fs.readFileSync("./test/resources/test-2.yaml-crypt");
     expect(output.toString("utf8")).to.equal(expected.toString("utf8"));
   });
 
   it("should encrypt the given YAML file (branca)", () => {
     const input = tmp.fileSync({ postfix: ".yaml" });
-    fs.copyFileSync("./test/test-2.yaml", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml", input.name);
     runWithKeyFile(["-a", "branca", input.name], {}, { stdout: new Out() });
     const output = fs.readFileSync(input.name + "-crypt");
     expect(output.toString("utf8")).to.not.be.empty;
@@ -136,19 +136,22 @@ describe("yaml-crypt-cli", () => {
 
   it("should decrypt the given YAML file", () => {
     const input = tmp.fileSync({ postfix: ".yaml-crypt" });
-    fs.copyFileSync("./test/test-2.yaml-crypt", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml-crypt", input.name);
     runWithKeyFile([input.name], {}, { stdout: new Out() });
     const output = fs.readFileSync(
       input.name.substring(0, input.name.length - "-crypt".length)
     );
-    const expected = fs.readFileSync("./test/test-2.yaml");
+    const expected = fs.readFileSync("./test/resources/test-2.yaml");
     expect(output.toString("utf8")).to.equal(expected.toString("utf8"));
   });
 
   it("should throw an error when the output file exists", () => {
     const tmpdir = tmp.dirSync();
-    fs.copyFileSync("./test/test-2.yaml-crypt", `${tmpdir.name}/2.yaml-crypt`);
-    fs.copyFileSync("./test/test-2.yaml", `${tmpdir.name}/2.yaml`);
+    fs.copyFileSync(
+      "./test/resources/test-2.yaml-crypt",
+      `${tmpdir.name}/2.yaml-crypt`
+    );
+    fs.copyFileSync("./test/resources/test-2.yaml", `${tmpdir.name}/2.yaml`);
     expect(() =>
       runWithKeyFile(
         ["-d", `${tmpdir.name}/2.yaml-crypt`],
@@ -160,8 +163,11 @@ describe("yaml-crypt-cli", () => {
 
   it("should succeed when the output file exists and -f is given", () => {
     const tmpdir = tmp.dirSync();
-    fs.copyFileSync("./test/test-2.yaml-crypt", `${tmpdir.name}/2.yaml-crypt`);
-    fs.copyFileSync("./test/test-2.yaml", `${tmpdir.name}/2.yaml`);
+    fs.copyFileSync(
+      "./test/resources/test-2.yaml-crypt",
+      `${tmpdir.name}/2.yaml-crypt`
+    );
+    fs.copyFileSync("./test/resources/test-2.yaml", `${tmpdir.name}/2.yaml`);
     runWithKeyFile(
       ["-d", "--force", `${tmpdir.name}/2.yaml-crypt`],
       {},
@@ -171,10 +177,16 @@ describe("yaml-crypt-cli", () => {
 
   it("should decrypt the given directory", () => {
     const tmpdir = tmp.dirSync();
-    fs.copyFileSync("./test/test-2.yaml-crypt", `${tmpdir.name}/1.yaml-crypt`);
-    fs.copyFileSync("./test/test-2.yaml-crypt", `${tmpdir.name}/2.yml-crypt`);
+    fs.copyFileSync(
+      "./test/resources/test-2.yaml-crypt",
+      `${tmpdir.name}/1.yaml-crypt`
+    );
+    fs.copyFileSync(
+      "./test/resources/test-2.yaml-crypt",
+      `${tmpdir.name}/2.yml-crypt`
+    );
     runWithKeyFile(["--dir", tmpdir.name], {}, { stdout: new Out() });
-    const expected = fs.readFileSync("./test/test-2.yaml");
+    const expected = fs.readFileSync("./test/resources/test-2.yaml");
     const output1 = fs.readFileSync(`${tmpdir.name}/1.yaml`);
     const output2 = fs.readFileSync(`${tmpdir.name}/2.yml`);
     expect(output1.toString("utf8")).to.equal(expected.toString("utf8"));
@@ -189,20 +201,20 @@ describe("yaml-crypt-cli", () => {
     );
     runWithKeyFile(["--path", "a.b.c", input.name], {}, { stdout: new Out() });
     const output = fs.readFileSync(input.name + "-crypt");
-    const expected = fs.readFileSync("./test/test-3.yaml-crypt");
+    const expected = fs.readFileSync("./test/resources/test-3.yaml-crypt");
     expect(output.toString("utf8")).to.equal(expected.toString("utf8"));
   });
 
   it("should remove the old files", () => {
     const input = tmp.fileSync({ postfix: ".yaml" });
-    fs.copyFileSync("./test/test-2.yaml", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml", input.name);
     runWithKeyFile([input.name], {}, { stdout: new Out() });
     expect(fs.existsSync(input.name)).to.equal(false);
   });
 
   it("should not remove the old files when using --keep", () => {
     const input = tmp.fileSync({ postfix: ".yaml" });
-    fs.copyFileSync("./test/test-2.yaml", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml", input.name);
     runWithKeyFile(["--keep", input.name], {}, { stdout: new Out() });
     expect(fs.existsSync(input.name)).to.equal(true);
   });
@@ -219,7 +231,7 @@ describe("yaml-crypt-cli", () => {
 
   it("should decrypt the given YAML file (key passed via fd)", () => {
     const input = tmp.fileSync({ postfix: ".yaml-crypt" });
-    fs.copyFileSync("./test/test-2.yaml-crypt", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml-crypt", input.name);
     const keyFile = tmp.fileSync();
     fs.writeFileSync(keyFile.name, "aehae5Ui0Eechaeghau9Yoh9jufiep7H");
     const fd = fs.openSync(keyFile.name, "r");
@@ -231,7 +243,7 @@ describe("yaml-crypt-cli", () => {
     const output = fs.readFileSync(
       input.name.substring(0, input.name.length - "-crypt".length)
     );
-    const expected = fs.readFileSync("./test/test-2.yaml");
+    const expected = fs.readFileSync("./test/resources/test-2.yaml");
     expect(output.toString("utf8")).to.equal(expected.toString("utf8"));
   });
 
@@ -239,7 +251,7 @@ describe("yaml-crypt-cli", () => {
     const keyFile = tmp.fileSync();
     fs.writeSync(keyFile.fd, "INVALID_KEYchaeghau9Yoh9jufiep7H");
     const input = tmp.fileSync({ postfix: ".yaml-crypt" });
-    fs.copyFileSync("./test/test-2.yaml-crypt", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml-crypt", input.name);
     expect(() =>
       yamlcryptcli.run(
         ["-k", keyFile.name, input.name],
@@ -247,6 +259,18 @@ describe("yaml-crypt-cli", () => {
         { stdout: new Out() }
       )
     ).to.throw(/no matching key/);
+  });
+
+  it("should not throw an error when --continue is given", () => {
+    const keyFile = tmp.fileSync();
+    fs.writeSync(keyFile.fd, "INVALID_KEYchaeghau9Yoh9jufiep7H");
+    const input = tmp.fileSync({ postfix: ".yaml-crypt" });
+    fs.copyFileSync("./test/resources/test-2.yaml-crypt", input.name);
+    yamlcryptcli.run(
+      ["--continue", "-k", keyFile.name, input.name],
+      {},
+      { stderr: new Out() }
+    );
   });
 
   it("should throw an error when no named key is available in the config file", () => {
@@ -283,11 +307,11 @@ describe("yaml-crypt-cli", () => {
       ]
     };
     const options = {
-      stdin: fs.readFileSync("./test/test-2.yaml-crypt"),
+      stdin: fs.readFileSync("./test/resources/test-2.yaml-crypt"),
       stdout: new Out()
     };
     yamlcryptcli.run(["-d"], config, options);
-    const expected = fs.readFileSync("./test/test-2.yaml").toString();
+    const expected = fs.readFileSync("./test/resources/test-2.yaml").toString();
     expect(options.stdout.str).to.equal(expected);
   });
 
@@ -331,7 +355,7 @@ describe("yaml-crypt-cli", () => {
     fs.writeSync(keyFile.fd, "aehae5Ui0Eechaeghau9Yoh9jufiep7H");
 
     const input = tmp.fileSync({ postfix: ".yaml-crypt" });
-    fs.copyFileSync("./test/test-2.yaml-crypt", input.name);
+    fs.copyFileSync("./test/resources/test-2.yaml-crypt", input.name);
 
     yamlcryptcli.run(
       ["--debug", "-k", keyFile.name, "--edit", input.name],
@@ -340,7 +364,7 @@ describe("yaml-crypt-cli", () => {
     );
 
     const output = fs.readFileSync(input.name);
-    const expected = fs.readFileSync("./test/test-2.yaml-crypt");
+    const expected = fs.readFileSync("./test/resources/test-2.yaml-crypt");
     expect(output.toString("utf8")).to.equal(expected.toString("utf8"));
   });
 });
