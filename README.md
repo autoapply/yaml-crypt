@@ -11,18 +11,18 @@ Command line utility to encrypt and decrypt YAML documents.
 The package is available on the [npm registry](https://www.npmjs.com/package/yaml-crypt), so just run
 
     $ yarn global add yaml-crypt
-    $ yaml-crypt --help
+    $ yaml-crypt -h
 
 You can also install the package locally:
 
     $ mkdir yaml-crypt && cd yaml-crypt
     $ yarn init --yes
     $ yarn add yaml-crypt
-    $ ./node_modules/.bin/yaml-crypt --help
+    $ ./node_modules/.bin/yaml-crypt -h
 
 You can also use the [Docker image](https://hub.docker.com/r/autoapply/yaml-crypt/):
 
-    $ docker run --rm autoapply/yaml-crypt --help
+    $ docker run --rm autoapply/yaml-crypt -h
 
 ## Usage
 
