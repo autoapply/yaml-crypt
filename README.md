@@ -20,6 +20,10 @@ You can also install the package locally:
     $ yarn add yaml-crypt
     $ ./node_modules/.bin/yaml-crypt --help
 
+You can also use the [Docker image](https://hub.docker.com/r/autoapply/yaml-crypt/):
+
+    $ docker run --rm autoapply/yaml-crypt --help
+
 ## Usage
 
 First you will need to generate a key file. Currently,
