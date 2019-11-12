@@ -563,6 +563,9 @@ function writeNewKey(key, name) {
   content += `  - name: '${name}'\n    key: '${key}'\n`;
 
   fs.writeFileSync(file, content, { encoding: "utf8", mode: 0o600 });
+
+  console.log(key);
+  console.error(`key has been written to ${file}`);
 }
 
 function plaintextFile(file) {
