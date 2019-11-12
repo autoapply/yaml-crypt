@@ -3,6 +3,7 @@
 /* eslint-disable no-console */
 
 const fs = require("fs");
+const { homedir } = require("os");
 const path = require("path");
 const process = require("process");
 const childProcess = require("child_process");
@@ -107,9 +108,13 @@ function run(argv, config = {}, options = {}) {
     action: "storeTrue",
     help: "Decrypt data"
   });
-  parser.addArgument(["--generate-key"], {
-    action: "storeTrue",
-    help: "Generate a new random key. Use -a to specify the algorithm"
+  parser.addArgument(["-G", "--generate-key"], {
+    action: "append",
+    metavar: "<name>",
+    nargs: "?",
+    help:
+      "Generate a new random key. Use -a to specify the algorithm. " +
+      "When a name is given, the key will be written to the configuration file, otherwise it will be printed to stdout"
   });
   parser.addArgument(["-k"], {
     action: "append",
@@ -313,9 +318,20 @@ function _run(args, config, options) {
     ? keys[0]
     : null;
   if (args.generate_key) {
-    const key = generateKey(algorithm);
-    output.write(key);
-    output.write("\n");
+    if (args.generate_key[0] != null) {
+      const name = args.generate_key[0];
+      for (const key of configKeys) {
+        if (key.name === name) {
+          throw new UsageError(`key already exists: ${name}`);
+        }
+      }
+      const key = generateKey(algorithm);
+      writeNewKey(key, name);
+    } else {
+      const key = generateKey(algorithm);
+      output.write(key);
+      output.write("\n");
+    }
   } else if (args.edit) {
     for (const file of args.file) {
       editFile(file, keys, encryptionKey, algorithm, args, config);
@@ -510,6 +526,43 @@ function readFd(fd) {
     str += buf.toString("utf8", 0, len);
   }
   return str;
+}
+
+function writeNewKey(key, name) {
+  const configHome = path.join(homedir(), ".yaml-crypt");
+
+  let file = null;
+  let content = null;
+  for (const filename of ["config.yaml", "config.yml"]) {
+    try {
+      file = path.join(configHome, filename);
+      content = fs.readFileSync(file, "utf8");
+      break;
+    } catch (e) {
+      if (e.code === "ENOENT") {
+        continue;
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  if (content == null) {
+    content = "";
+    file = path.join(configHome, "config.yaml");
+    fs.mkdirSync(configHome, { recursive: true, mode: 0o700 });
+  }
+
+  // no YAML parsing, to keep file comments!
+  if (content.length > 0 && !content.endsWith("\n")) {
+    content += "\n";
+  }
+  if (!content.split("\n").includes("keys:")) {
+    content += "keys:\n";
+  }
+  content += `  - name: '${name}'\n    key: '${key}'\n`;
+
+  fs.writeFileSync(file, content, { encoding: "utf8", mode: 0o600 });
 }
 
 function plaintextFile(file) {
