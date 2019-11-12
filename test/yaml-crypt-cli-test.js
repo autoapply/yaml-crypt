@@ -288,7 +288,10 @@ describe("yaml-crypt-cli", () => {
 
   it("should throw an error when the key names are not unique in the config file", () => {
     const config = {
-      keys: [{ key: "a", name: "key1" }, { key: "b", name: "key1" }]
+      keys: [
+        { key: "a", name: "key1" },
+        { key: "b", name: "key1" }
+      ]
     };
     const options = {
       stdin: "",
