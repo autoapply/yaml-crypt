@@ -108,13 +108,14 @@ function run(argv, config = {}, options = {}) {
     action: "storeTrue",
     help: "Decrypt data"
   });
-  parser.addArgument(["-G", "--generate-key"], {
-    action: "append",
+  parser.addArgument(["--generate-key"], {
+    action: "storeTrue",
+    help: "Generate a new random key. Use -a to specify the algorithm"
+  });
+  parser.addArgument(["--write-key"], {
     metavar: "<name>",
-    nargs: "?",
     help:
-      "Generate a new random key. Use -a to specify the algorithm. " +
-      "When a name is given, the key will be written to the configuration file, otherwise it will be printed to stdout"
+      "Read a key from stdin and write it to the configuration file under the given name"
   });
   parser.addArgument(["-k"], {
     action: "append",
@@ -249,11 +250,19 @@ function run(argv, config = {}, options = {}) {
   if (args.edit && !args.file.length) {
     throw new UsageError("option --edit used, but no files given!");
   }
-  if (!args.generate_key && !args.k && (!config.keys || !config.keys.length)) {
+  if (
+    !args.generate_key &&
+    !args.write_key &&
+    !args.k &&
+    (!config.keys || !config.keys.length)
+  ) {
     throw new UsageError("no keys given and no default keys configured!");
   }
   if (args.keep && !args.file.length) {
     throw new UsageError("option --keep used, but no files given!");
+  }
+  if (args.generate_key && args.write_key) {
+    throw new UsageError("cannot combine --generate-key and --write-key!");
   }
   if (args.generate_key && args.encrypt) {
     throw new UsageError("cannot combine --generate-key and --encrypt!");
@@ -263,6 +272,15 @@ function run(argv, config = {}, options = {}) {
   }
   if (args.generate_key && args.file && args.file.length) {
     throw new UsageError("option --generate-key used, but files given!");
+  }
+  if (args.write_key && args.encrypt) {
+    throw new UsageError("cannot combine --write-key and --encrypt!");
+  }
+  if (args.write_key && args.decrypt) {
+    throw new UsageError("cannot combine --write-key and --decrypt!");
+  }
+  if (args.write_key && args.file && args.file.length) {
+    throw new UsageError("option --write-key used, but files given!");
   }
   try {
     _run(args, config, options);
@@ -318,20 +336,26 @@ function _run(args, config, options) {
     ? keys[0]
     : null;
   if (args.generate_key) {
-    if (args.generate_key[0] != null) {
-      const name = args.generate_key[0];
-      for (const key of configKeys) {
-        if (key.name === name) {
-          throw new UsageError(`key already exists: ${name}`);
-        }
+    const key = generateKey(algorithm);
+    output.write(key);
+    output.write("\n");
+  } else if (args.write_key) {
+    const name = args.write_key;
+    for (const key of configKeys) {
+      if (key.name === name) {
+        throw new UsageError(`key already exists: ${name}`);
       }
-      const key = generateKey(algorithm);
-      writeNewKey(key, name);
-    } else {
-      const key = generateKey(algorithm);
-      output.write(key);
-      output.write("\n");
     }
+    readInput(input, buf => {
+      const key = buf.toString("utf8").trim();
+      if (key.length === 32) {
+        writeNewKey(key, name);
+      } else if (key.length > 0) {
+        throw new UsageError(`key should be 32 bytes, but got ${key.length}`);
+      } else {
+        throw new UsageError("empty key given!");
+      }
+    });
   } else if (args.edit) {
     for (const file of args.file) {
       editFile(file, keys, encryptionKey, algorithm, args, config);
@@ -553,19 +577,18 @@ function writeNewKey(key, name) {
     fs.mkdirSync(configHome, { recursive: true, mode: 0o700 });
   }
 
+  const lf = content.includes("\r\n") ? "\r\n" : "\n";
+
   // no YAML parsing, to keep file comments!
-  if (content.length > 0 && !content.endsWith("\n")) {
-    content += "\n";
+  if (content.length > 0 && !content.endsWith(lf)) {
+    content += lf;
   }
-  if (!content.split("\n").includes("keys:")) {
-    content += "keys:\n";
+  if (!content.split(lf).includes("keys:")) {
+    content += `keys:${lf}`;
   }
-  content += `  - name: '${name}'\n    key: '${key}'\n`;
+  content += `  - name: '${name}'${lf}    key: '${key}'${lf}`;
 
   fs.writeFileSync(file, content, { encoding: "utf8", mode: 0o600 });
-
-  console.log(key);
-  console.error(`key has been written to ${file}`);
 }
 
 function plaintextFile(file) {
