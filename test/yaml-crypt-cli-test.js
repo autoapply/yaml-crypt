@@ -55,6 +55,8 @@ describe("yaml-crypt-cli", () => {
   it("should throw an error when combining invalid flags", () => {
     const invalid = [
       ["--raw", "--path", "."],
+      ["--raw", "--query", "."],
+      ["--edit", "--query", "."],
       ["--edit", "--encrypt"],
       ["--edit", "--decrypt"],
       ["--edit", "--keep"],
@@ -76,6 +78,18 @@ describe("yaml-crypt-cli", () => {
     expect(() =>
       runWithKeyFile(["--edit", "x.yaml-crypt"], {}, { stdout: new Out() })
     ).to.throw(/file does not exist/);
+  });
+
+  it("should throw an error when passing query without decrypt", () => {
+    expect(() => runWithKeyFile(["--query", "."], {}, {})).to.throw(
+      /must be combined with/
+    );
+  });
+
+  it("should throw an error when passing query with files", () => {
+    expect(() => runWithKeyFile(["--query", ".", "x"], {}, {})).to.throw(
+      /only valid when reading from stdin/
+    );
   });
 
   it("should throw an error when passing invalid algorithm", () => {
@@ -316,6 +330,26 @@ describe("yaml-crypt-cli", () => {
     yamlcryptcli.run(["-d"], config, options);
     const expected = fs.readFileSync("./test/resources/test-2.yaml").toString();
     expect(options.stdout.str).to.equal(expected);
+  });
+
+  it("should decrypt the given input and return the query string", () => {
+    const config = { keys: [{ key: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" }] };
+    const options = {
+      stdin: fs.readFileSync("./test/resources/test-2.yaml-crypt"),
+      stdout: new Out()
+    };
+    yamlcryptcli.run(["-d", "--query", "first"], config, options);
+    expect(options.stdout.str).to.equal("Hello, world!\n\n");
+  });
+
+  it("should decrypt the given input and return the query object", () => {
+    const config = { keys: [{ key: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" }] };
+    const options = {
+      stdin: fs.readFileSync("./test/resources/test-3.yaml-crypt"),
+      stdout: new Out()
+    };
+    yamlcryptcli.run(["-d", "--query", "a"], config, options);
+    expect(options.stdout.str).to.equal('{"b":{"c":"secret"}}\n');
   });
 
   it("should decrypt the given input when using --raw", () => {

@@ -19,7 +19,12 @@ const {
   encrypt,
   decrypt
 } = require("../lib/yaml-crypt");
-const { UsageError, safeDumpAll, tryDecrypt } = require("../lib/utils");
+const {
+  UsageError,
+  safeDumpAll,
+  tryDecrypt,
+  walkValues
+} = require("../lib/utils");
 const { walk } = require("../lib/yaml-crypt-helper");
 
 require("pkginfo")(module);
@@ -148,6 +153,11 @@ function run(argv, config = {}, options = {}) {
     help:
       'Only process values below the given YAML path. For the document {obj:{key:secret},other:[value1,value2]} use "--path=obj.key" to only process "secret"'
   });
+  parser.addArgument(["--query"], {
+    metavar: "<yaml-query>",
+    help:
+      "Output the value for the given YAML query path. Uses the same syntax as the --path option"
+  });
   parser.addArgument(["--raw"], {
     action: "storeTrue",
     help: "Encrypt/decrypt raw messages instead of YAML documents"
@@ -232,8 +242,14 @@ function run(argv, config = {}, options = {}) {
   if (args.raw && args.path) {
     throw new UsageError("cannot combine --raw and --path!");
   }
+  if (args.raw && args.query) {
+    throw new UsageError("cannot combine --raw and --query!");
+  }
   if (args.edit && args.path) {
     throw new UsageError("cannot combine --edit and --path!");
+  }
+  if (args.edit && args.query) {
+    throw new UsageError("cannot combine --edit and --query!");
   }
   if (args.edit && args.keep) {
     throw new UsageError("cannot combine --edit and --keep!");
@@ -260,6 +276,12 @@ function run(argv, config = {}, options = {}) {
   }
   if (args.keep && !args.file.length) {
     throw new UsageError("option --keep used, but no files given!");
+  }
+  if (args.query && args.file.length) {
+    throw new UsageError("option --query only valid when reading from stdin!");
+  }
+  if (args.query && !args.decrypt) {
+    throw new UsageError("option --query must be combined with --decrypt!");
   }
   if (args.generate_key && args.write_key) {
     throw new UsageError("cannot combine --generate-key and --write-key!");
@@ -406,7 +428,23 @@ function _run(args, config, options) {
           result = crypt.encryptAll(str, opts);
         } else {
           const objs = crypt.decryptAll(str, opts);
-          result = safeDumpAll(objs);
+          if (args.query) {
+            const arr = [];
+            for (const obj of objs) {
+              walkValues(
+                obj,
+                args.query,
+                () => true,
+                v => arr.push(v)
+              );
+            }
+            result =
+              arr
+                .map(v => (typeof v === "string" ? v : JSON.stringify(v)))
+                .join("\n") + "\n";
+          } else {
+            result = safeDumpAll(objs);
+          }
         }
         output.write(result);
       }
@@ -717,7 +755,7 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
 
   const editor = config["editor"] || process.env["EDITOR"] || "vim";
 
-  const tmpFile = tmp.fileSync({ dir: dir, postfix: ".yaml", keep: true });
+  const tmpFile = tmp.fileSync({ tmpdir: dir, postfix: ".yaml", keep: true });
   try {
     const opts = { base64: args.base64, algorithm: algorithm, raw: args.raw };
     const crypt = yamlcrypt({ keys, encryptionKey });
