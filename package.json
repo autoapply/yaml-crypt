@@ -23,7 +23,7 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "dependencies": {
-    "argparse": "^1.0.7",
+    "argparse": "^2.0.1",
     "branca": "^0.3.0",
     "fernet": "^0.3.1",
     "js-yaml": "^3.14.0",
