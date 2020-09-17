@@ -41,7 +41,7 @@ async function main() {
     cfg = {};
   }
   try {
-    run(null, cfg, {});
+    run(undefined, cfg, {});
   } catch (e) {
     handleError(e);
   }
@@ -68,9 +68,9 @@ function run(argv, config = {}, options = {}) {
     exit(status, message) {
       if (message) {
         if (status === 0) {
-          this._printMessage(message);
+          this._print_message(message);
         } else {
-          this._printMessage(message, process.stderr);
+          this._print_message(message, process.stderr);
         }
       }
       throw new ExitError(status || 0);
@@ -84,7 +84,7 @@ function run(argv, config = {}, options = {}) {
       }
     }
 
-    _printMessage(message, stream) {
+    _print_message(message, stream) {
       if (message) {
         if (options.stdout) {
           stream = options.stdout;
@@ -97,95 +97,99 @@ function run(argv, config = {}, options = {}) {
   }
   const parser = new Parser({
     prog: module.exports.name,
-    version: module.exports.version,
-    addHelp: true,
+    add_help: true,
     description: module.exports.description
   });
-  parser.addArgument(["--debug"], {
-    action: "storeTrue",
+  parser.add_argument("-v", "--version", {
+    action: "version",
+    version: module.exports.version,
+    help: "Show version number and exit"
+  });
+  parser.add_argument("--debug", {
+    action: "store_true",
     help: "Show debugging output"
   });
-  parser.addArgument(["-e", "--encrypt"], {
-    action: "storeTrue",
+  parser.add_argument("-e", "--encrypt", {
+    action: "store_true",
     help: "Encrypt data"
   });
-  parser.addArgument(["-d", "--decrypt"], {
-    action: "storeTrue",
+  parser.add_argument("-d", "--decrypt", {
+    action: "store_true",
     help: "Decrypt data"
   });
-  parser.addArgument(["--generate-key"], {
-    action: "storeTrue",
+  parser.add_argument("--generate-key", {
+    action: "store_true",
     help: "Generate a new random key. Use -a to specify the algorithm"
   });
-  parser.addArgument(["--write-key"], {
+  parser.add_argument("--write-key", {
     metavar: "<name>",
     help:
       "Read a key from stdin and write it to the configuration file under the given name"
   });
-  parser.addArgument(["-k"], {
+  parser.add_argument("-k", {
     action: "append",
     metavar: "<key>",
     help:
       'Use the given key to decrypt data. Can be given multiple times. See section "Key sources" for details'
   });
-  parser.addArgument(["-K"], {
+  parser.add_argument("-K", {
     metavar: "<key>",
     help:
       'Use the given key to encrypt data. See section "Key sources" for details'
   });
-  parser.addArgument(["-a", "--algorithm"], {
+  parser.add_argument("-a", "--algorithm", {
     metavar: "<algorithm>",
     help:
       'The encryption algorithm to use. Must be one of "fernet" (default) or "branca"'
   });
-  parser.addArgument(["-E", "--edit"], {
-    action: "storeTrue",
+  parser.add_argument("-E", "--edit", {
+    action: "store_true",
     help:
       "Open an editor for the given files, transparently decrypting and encrypting the file content"
   });
-  parser.addArgument(["-B", "--base64"], {
-    action: "storeTrue",
+  parser.add_argument("-B", "--base64", {
+    action: "store_true",
     help:
       "Encode values using Base64 encoding before encrypting and decode values after decrypting"
   });
-  parser.addArgument(["--path"], {
+  parser.add_argument("--path", {
     metavar: "<yaml-path>",
     help:
       'Only process values below the given YAML path. For the document {obj:{key:secret},other:[value1,value2]} use "--path=obj.key" to only process "secret"'
   });
-  parser.addArgument(["--query"], {
+  parser.add_argument("--query", {
     metavar: "<yaml-query>",
     help:
       "Output the value for the given YAML query path. Uses the same syntax as the --path option"
   });
-  parser.addArgument(["--raw"], {
-    action: "storeTrue",
+  parser.add_argument("--raw", {
+    action: "store_true",
     help: "Encrypt/decrypt raw messages instead of YAML documents"
   });
-  parser.addArgument(["-D", "--dir"], {
-    action: "storeTrue",
+  parser.add_argument("-D", "--dir", {
+    action: "store_true",
     help:
       "Allows to pass directories as input, process all files within the given directories (non-recursive)"
   });
-  parser.addArgument(["-R", "--recursive"], {
-    action: "storeTrue",
+  parser.add_argument("-R", "--recursive", {
+    action: "store_true",
     help:
       "Allows to pass directories as input, process all files within the given directories and subdirectories recursively"
   });
-  parser.addArgument(["--continue"], {
-    action: "storeTrue",
+  parser.add_argument("--continue", {
+    action: "store_true",
     help:
       "Continue processing even when encryption/decryption of one or more files failed"
   });
-  parser.addArgument(["--keep"], {
-    action: "storeTrue",
+  parser.add_argument("--keep", {
+    action: "store_true",
     help: "Keep the original files after encryption/decryption"
   });
-  parser.addArgument(["-f", "--force"], {
-    action: "storeTrue",
+  parser.add_argument("-f", "--force", {
+    action: "store_true",
     help: "Overwrite existing files"
   });
-  parser.addArgument(["file"], {
+  parser.add_argument("file", {
     nargs: "*",
     metavar: "<file>",
     help: "Input file(s) to process"
@@ -194,7 +198,7 @@ function run(argv, config = {}, options = {}) {
     (argv && argv.includes("--help")) ||
     (process.argv && process.argv.includes("--help"))
   ) {
-    parser.addArgumentGroup({
+    parser.add_argument_group({
       title: "Configuration file",
       description:
         "During startup, yaml-crypt will look for a configuration file " +
@@ -203,7 +207,7 @@ function run(argv, config = {}, options = {}) {
         'attribute "key" which contains the raw key data and an optional attribute ' +
         '"name" with a custom name for that key.'
     });
-    parser.addArgumentGroup({
+    parser.add_argument_group({
       title: "Key sources",
       description:
         "Keys can be provided from multiple sources: configuration file, environment variables, key files and file descriptors. " +
@@ -213,7 +217,7 @@ function run(argv, config = {}, options = {}) {
         'the configuration file, read a key from the environment variable "MY_KEY", read another key from file descriptor 0 (stdin) and another key from ' +
         'the local file "my.key".'
     });
-    parser.addArgumentGroup({
+    parser.add_argument_group({
       title: "Decryption keys",
       description:
         "When no keys are given, decryption keys are read from the configuration file. " +
@@ -222,7 +226,7 @@ function run(argv, config = {}, options = {}) {
         "All provided decryption keys are tried, in order, until the data can be successfully decrypted. " +
         "If none of the available keys matches, the operation fails."
     });
-    parser.addArgumentGroup({
+    parser.add_argument_group({
       title: "Encryption keys",
       description:
         "When no encryption key is given and only one decryption key is available, that " +
@@ -235,7 +239,7 @@ function run(argv, config = {}, options = {}) {
   } else {
     parser.epilog = "For more details, specify --help";
   }
-  const args = parser.parseArgs(argv);
+  const args = parser.parse_args(argv);
   if (args.encrypt && args.decrypt) {
     throw new UsageError("cannot combine --encrypt and --decrypt!");
   }
