@@ -127,7 +127,7 @@ describe("yaml-crypt-cli", () => {
       stdin: "",
       stdout: new Out()
     };
-    yamlcryptcli.run(["--debug", "--generate-key"], {}, options);
+    yamlcryptcli.run(["--generate-key"], {}, options);
     expect(options.stdout.str.trimRight()).to.have.lengthOf(32);
   });
 
@@ -236,11 +236,7 @@ describe("yaml-crypt-cli", () => {
   function runWithKeyFile(argv, config, options) {
     const keyFile = tmp.fileSync();
     fs.writeSync(keyFile.fd, "aehae5Ui0Eechaeghau9Yoh9jufiep7H");
-    return yamlcryptcli.run(
-      ["--debug", "-k", keyFile.name].concat(argv),
-      config,
-      options
-    );
+    return yamlcryptcli.run(["-k", keyFile.name].concat(argv), config, options);
   }
 
   it("should decrypt the given YAML file (key passed via fd)", () => {
@@ -249,11 +245,7 @@ describe("yaml-crypt-cli", () => {
     const keyFile = tmp.fileSync();
     fs.writeFileSync(keyFile.name, "aehae5Ui0Eechaeghau9Yoh9jufiep7H");
     const fd = fs.openSync(keyFile.name, "r");
-    yamlcryptcli.run(
-      ["--debug", "-k", `fd:${fd}`, input.name],
-      {},
-      { stdout: new Out() }
-    );
+    yamlcryptcli.run(["-k", `fd:${fd}`, input.name], {}, { stdout: new Out() });
     const output = fs.readFileSync(
       input.name.substring(0, input.name.length - "-crypt".length)
     );
@@ -395,7 +387,7 @@ describe("yaml-crypt-cli", () => {
     fs.copyFileSync("./test/resources/test-2.yaml-crypt", input.name);
 
     yamlcryptcli.run(
-      ["--debug", "-k", keyFile.name, "--edit", input.name],
+      ["-k", keyFile.name, "--edit", input.name],
       { editor: "touch" },
       {}
     );

@@ -354,7 +354,9 @@ function _run(args, config, options) {
   if (args.k) {
     keys.push(...args.k.map(k => readKey(configKeys, k)));
   } else {
-    configKeys.forEach(k => keys.push(k.key));
+    configKeys.forEach(k =>
+      keys.push({ source: `config:${k.name}`, key: k.key })
+    );
   }
   const encryptionKey = args.K
     ? readKey(configKeys, args.K)
@@ -404,27 +406,35 @@ function _run(args, config, options) {
     if (encrypting) {
       checkEncryptionKey(keys, encryptionKey);
     }
-    const opts = { algorithm, base64: args.base64, path: args.path };
     readInput(input, buf => {
       if (args.raw) {
         if (encrypting) {
           const str = args.base64
             ? buf.toString("base64")
             : buf.toString("utf8");
-          const result = encrypt(algorithm, encryptionKey, str);
+          const result = encrypt(algorithm, encryptionKey.key, str);
           output.write(result);
           output.write("\n");
         } else {
           const str = buf.toString("utf8");
-          const decrypted = tryDecrypt(algorithms, keys, (algorithm, key) =>
-            decrypt(algorithm, key, str)
+          const { key, decrypted } = tryDecrypt(
+            algorithms,
+            keys,
+            (algorithm, key) => decrypt(algorithm, key.key, str)
           );
+          logDecryptionKey(args, key);
           const result = args.base64
             ? Buffer.from(decrypted, "base64").toString("utf8")
             : decrypted;
           output.write(result);
         }
       } else {
+        const opts = {
+          algorithm,
+          base64: args.base64,
+          path: args.path,
+          callback: key => logDecryptionKey(args, key)
+        };
         const str = buf.toString("utf8");
         const crypt = yamlcrypt({ keys, encryptionKey });
         let result;
@@ -547,7 +557,7 @@ function readKey(configKeys, key) {
   if (prefix === "c" || prefix === "config") {
     for (const k of configKeys) {
       if (k.name === arg) {
-        return k.key;
+        return { source: `config:${k.name}`, key: k.key };
       }
     }
     throw new UsageError(`key not found in configuration file: ${arg}`);
@@ -556,11 +566,11 @@ function readKey(configKeys, key) {
     if (!str || !str.trim()) {
       throw new UsageError(`no such environment variable: ${arg}`);
     }
-    return str.trim();
+    return { source: `env:${arg}`, key: str.trim() };
   } else if (prefix === "fd") {
     const fd = parseInt(arg);
     if (fd || fd === 0) {
-      return readFd(fd).trim();
+      return { source: `fd:${arg}`, key: readFd(fd).trim() };
     } else {
       throw new UsageError(`not a file descriptor: ${arg}`);
     }
@@ -575,7 +585,7 @@ function readKey(configKeys, key) {
         throw e;
       }
     }
-    return raw.toString("utf8").trim();
+    return { source: `file:${arg}`, key: raw.toString("utf8").trim() };
   } else {
     throw new UsageError(`unknown key argument: ${key}`);
   }
@@ -720,7 +730,8 @@ function doProcessFile(file, keys, encryptionKey, algorithm, args) {
     algorithm,
     base64: args.base64,
     path: args.path,
-    raw: args.raw
+    raw: args.raw,
+    callback: key => logDecryptionKey(args, key)
   };
   const crypt = yamlcrypt({ keys, encryptionKey });
   let result;
@@ -765,7 +776,9 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
     const crypt = yamlcrypt({ keys, encryptionKey });
     const transformed = crypt.transform(
       content,
-      str => {
+      (str, key) => {
+        logDecryptionKey(args, key);
+
         fs.writeSync(tmpFile.fd, str);
         fs.closeSync(tmpFile.fd);
 
@@ -781,6 +794,12 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
     if (fs.existsSync(tmpFile.name)) {
       fs.unlinkSync(tmpFile.name);
     }
+  }
+}
+
+function logDecryptionKey(args, key) {
+  if (args.debug) {
+    console.error("successfully decrypted using key:", key.source);
   }
 }
 
