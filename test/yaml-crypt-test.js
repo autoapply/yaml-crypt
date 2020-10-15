@@ -181,10 +181,14 @@ describe("yaml-crypt", () => {
   });
 
   it("should throw an error when an invalid key is given", () => {
-    expect(() => yamlcrypt({ keys: 0 })).to.throw("invalid key: number");
+    expect(() => yamlcrypt({ keys: 0 })).to.throw(
+      "invalid key unknown source: number"
+    );
   });
 
   it("should throw an error when an empty key is given", () => {
-    expect(() => yamlcrypt({ keys: "" })).to.throw("empty key!");
+    expect(() =>
+      yamlcrypt({ keys: { source: "config:test", key: "" } })
+    ).to.throw("empty key: config:test");
   });
 });
