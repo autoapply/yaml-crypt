@@ -7,8 +7,8 @@ const chai = require("chai");
 const expect = chai.expect;
 
 const tmp = require("tmp");
-const yaml = require("js-yaml");
 
+const { dump } = require("../lib/utils");
 const yamlcryptcli = require("../bin/yaml-crypt-cli");
 
 require("./crypto-util").setupCrypto();
@@ -209,10 +209,7 @@ describe("yaml-crypt-cli", () => {
 
   it("should encrypt only parts of the YAML file when using --path", () => {
     const input = tmp.fileSync({ postfix: ".yaml" });
-    fs.writeSync(
-      input.fd,
-      yaml.safeDump({ a: { b: { c: "secret" } }, x: "plain" })
-    );
+    fs.writeSync(input.fd, dump({ a: { b: { c: "secret" } }, x: "plain" }));
     runWithKeyFile(["--path", "a.b.c", input.name], {}, { stdout: new Out() });
     const output = fs.readFileSync(input.name + "-crypt");
     const expected = fs.readFileSync("./test/resources/test-3.yaml-crypt");

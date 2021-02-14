@@ -19,12 +19,7 @@ const {
   encrypt,
   decrypt
 } = require("../lib/yaml-crypt");
-const {
-  UsageError,
-  safeDumpAll,
-  tryDecrypt,
-  walkValues
-} = require("../lib/utils");
+const { UsageError, dumpAll, tryDecrypt, walkValues } = require("../lib/utils");
 const { walk } = require("../lib/yaml-crypt-helper");
 
 require("pkginfo")(module);
@@ -457,7 +452,7 @@ function _run(args, config, options) {
                 .map(v => (typeof v === "string" ? v : JSON.stringify(v)))
                 .join("\n") + "\n";
           } else {
-            result = safeDumpAll(objs);
+            result = dumpAll(objs);
           }
         }
         output.write(result);
@@ -739,7 +734,7 @@ function doProcessFile(file, keys, encryptionKey, algorithm, args) {
     result = crypt.encryptAll(content, opts);
   } else {
     const objs = crypt.decryptAll(content, opts);
-    result = safeDumpAll(objs);
+    result = dumpAll(objs);
   }
 
   if (!args.keep) {
