@@ -541,7 +541,7 @@ function readConfigKeys(config) {
 function readKey(configKeys, key) {
   let prefix;
   let arg;
-  if (key.includes(":")) {
+  if (key.includes(":") && !key.match(/^[A-Z]:\\/)) {
     const idx = key.indexOf(":");
     prefix = key.substring(0, idx);
     arg = key.substring(idx + 1);
@@ -765,7 +765,13 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
 
   const editor = config["editor"] || process.env["EDITOR"] || "vim";
 
-  const tmpFile = tmp.fileSync({ tmpdir: dir, postfix: ".yaml", keep: true });
+  const tmpFile = tmp.fileSync({
+    tmpdir: dir,
+    postfix: ".yaml",
+    keep: true,
+    discardDescriptor: true
+  });
+
   try {
     const opts = { base64: args.base64, algorithm: algorithm, raw: args.raw };
     const crypt = yamlcrypt({ keys, encryptionKey });
@@ -774,8 +780,7 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
       (str, key) => {
         logDecryptionKey(args, key);
 
-        fs.writeSync(tmpFile.fd, str);
-        fs.closeSync(tmpFile.fd);
+        fs.writeFileSync(tmpFile.name, str);
 
         childProcess.spawnSync(editor, [tmpFile.name], { stdio: "inherit" });
 
@@ -786,8 +791,12 @@ function editFile(file, keys, encryptionKey, algorithm, args, config) {
     fs.writeFileSync(tmpFile.name, transformed);
     fs.renameSync(tmpFile.name, file);
   } finally {
-    if (fs.existsSync(tmpFile.name)) {
-      fs.unlinkSync(tmpFile.name);
+    try {
+      tmpFile.removeCallback();
+    } finally {
+      if (fs.existsSync(tmpFile.name)) {
+        fs.unlinkSync(tmpFile.name);
+      }
     }
   }
 }

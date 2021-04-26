@@ -7,6 +7,7 @@ const chai = require("chai");
 const expect = chai.expect;
 
 const tmp = require("tmp");
+const { dump } = require("js-yaml");
 
 const { loadFile, loadConfig, yamlcrypt } = require("../lib/yaml-crypt");
 const { setupCrypto, decryptBranca } = require("./crypto-util");
@@ -178,6 +179,13 @@ describe("yaml-crypt", () => {
       str.replace("Hello!", "Hello, world!")
     );
     expect(transformed).to.not.equal(content);
+  });
+
+  it("should correctly parse primitive types", () => {
+    const yaml = yamlcrypt({ keys: "aehae5Ui0Eechaeghau9Yoh9jufiep7H" });
+    const content = fs.readFileSync("./test/resources/test-8.yaml", "utf8");
+    const transformed = dump(yaml.decrypt(content));
+    expect(transformed).to.equal(content);
   });
 
   it("should throw an error when an invalid key is given", () => {

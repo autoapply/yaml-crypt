@@ -380,7 +380,10 @@ describe("yaml-crypt-cli", () => {
     const keyFile = tmp.fileSync();
     fs.writeSync(keyFile.fd, "aehae5Ui0Eechaeghau9Yoh9jufiep7H");
 
-    const input = tmp.fileSync({ postfix: ".yaml-crypt" });
+    const input = tmp.fileSync({
+      postfix: ".yaml-crypt",
+      discardDescriptor: true
+    });
     fs.copyFileSync("./test/resources/test-2.yaml-crypt", input.name);
 
     yamlcryptcli.run(

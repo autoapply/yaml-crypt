@@ -22,6 +22,6 @@ describe("yaml-crypt-helper", () => {
     const files = [];
     const callback = file => files.push(file);
     walk("./test", true, callback);
-    expect(files).to.have.lengthOf(15);
+    expect(files).to.have.lengthOf(16);
   });
 });
