@@ -118,44 +118,36 @@ function run(argv, config = {}, options = {}) {
   });
   parser.add_argument("--write-key", {
     metavar: "<name>",
-    help:
-      "Read a key from stdin and write it to the configuration file under the given name"
+    help: "Read a key from stdin and write it to the configuration file under the given name"
   });
   parser.add_argument("-k", {
     action: "append",
     metavar: "<key>",
-    help:
-      'Use the given key to decrypt data. Can be given multiple times. See section "Key sources" for details'
+    help: 'Use the given key to decrypt data. Can be given multiple times. See section "Key sources" for details'
   });
   parser.add_argument("-K", {
     metavar: "<key>",
-    help:
-      'Use the given key to encrypt data. See section "Key sources" for details'
+    help: 'Use the given key to encrypt data. See section "Key sources" for details'
   });
   parser.add_argument("-a", "--algorithm", {
     metavar: "<algorithm>",
-    help:
-      'The encryption algorithm to use. Must be one of "fernet" (default) or "branca"'
+    help: 'The encryption algorithm to use. Must be one of "fernet" (default) or "branca"'
   });
   parser.add_argument("-E", "--edit", {
     action: "store_true",
-    help:
-      "Open an editor for the given files, transparently decrypting and encrypting the file content"
+    help: "Open an editor for the given files, transparently decrypting and encrypting the file content"
   });
   parser.add_argument("-B", "--base64", {
     action: "store_true",
-    help:
-      "Encode values using Base64 encoding before encrypting and decode values after decrypting"
+    help: "Encode values using Base64 encoding before encrypting and decode values after decrypting"
   });
   parser.add_argument("--path", {
     metavar: "<yaml-path>",
-    help:
-      'Only process values below the given YAML path. For the document {obj:{key:secret},other:[value1,value2]} use "--path=obj.key" to only process "secret"'
+    help: 'Only process values below the given YAML path. For the document {obj:{key:secret},other:[value1,value2]} use "--path=obj.key" to only process "secret"'
   });
   parser.add_argument("--query", {
     metavar: "<yaml-query>",
-    help:
-      "Output the value for the given YAML query path. Uses the same syntax as the --path option"
+    help: "Output the value for the given YAML query path. Uses the same syntax as the --path option"
   });
   parser.add_argument("--raw", {
     action: "store_true",
@@ -163,18 +155,15 @@ function run(argv, config = {}, options = {}) {
   });
   parser.add_argument("-D", "--dir", {
     action: "store_true",
-    help:
-      "Allows to pass directories as input, process all files within the given directories (non-recursive)"
+    help: "Allows to pass directories as input, process all files within the given directories (non-recursive)"
   });
   parser.add_argument("-R", "--recursive", {
     action: "store_true",
-    help:
-      "Allows to pass directories as input, process all files within the given directories and subdirectories recursively"
+    help: "Allows to pass directories as input, process all files within the given directories and subdirectories recursively"
   });
   parser.add_argument("--continue", {
     action: "store_true",
-    help:
-      "Continue processing even when encryption/decryption of one or more files failed"
+    help: "Continue processing even when encryption/decryption of one or more files failed"
   });
   parser.add_argument("--keep", {
     action: "store_true",
