@@ -411,10 +411,10 @@ braces@~3.0.2:
   dependencies:
     fill-range "^7.0.1"
 
-branca@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/branca/-/branca-0.3.0.tgz#5db6a2b1b0f8ad53c5ee78fa712d4195b38033a6"
-  integrity sha512-L8lTyi9bLf/o6qzT+H3B4/leCBhRmxwbcXfDC82TKs+lO1HJzImGmvHFVPBnBBrsOHKsHE01O+G4YI96GKUcTQ==
+branca@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/branca/-/branca-0.4.0.tgz#d912154c17c3ebc1ab0419d240e367f705eae217"
+  integrity sha512-KX1CoqtfTtM4MzKjKWmganb5Yq+qdfAEskivQ5q42jdFMCOvK9aJbXKVlhuhr14wp8lrWHGXPxtDLJD4l6UlCg==
   dependencies:
     base-x "^3.0.2"
     bufferpack "^0.0.6"
