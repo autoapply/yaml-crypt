@@ -877,10 +877,10 @@ fast-levenshtein@^2.0.6:
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
 
-fernet@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/fernet/-/fernet-0.3.1.tgz#970ea51dddc34a77b8805961e05758826a9eca29"
-  integrity sha512-7KnsrcpLkUsKy6aH6Ow68hrMWhvE25rTDd3370+xVGkpqZta05cUCmdJQPyLBKTsNdPUB5NumJZBgJIJ60aQqw==
+fernet@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/fernet/-/fernet-0.4.0.tgz#95d10a3660bf1ccfb4964687508ec2e2ba5eda25"
+  integrity sha512-FJgmKoMeG4eoM+bEbMyTzPx9US4W+sw4D0i6jSWSKHFYlFZv92UIWi6a/w6MEf2JNSO+Mth/T+u+d/ye1zwN9A==
   dependencies:
     crypto-js "~3.1.2-1"
     urlsafe-base64 "1.0.0"
