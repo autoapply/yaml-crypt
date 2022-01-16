@@ -17,10 +17,9 @@
   "scripts": {
     "lint": "eslint . && prettier -l */**.js */**.ts",
     "test": "nyc mocha --timeout=8000 --check-leaks",
-    "test:coverage": "npx nyc --reporter=lcov mocha",
-    "build": "yarn lint && yarn test",
-    "prepublish": "yarn build",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "test:coverage": "nyc --reporter=lcov mocha",
+    "build": "yarn lint && yarn test:coverage",
+    "prepublish": "yarn build"
   },
   "dependencies": {
     "argparse": "^2.0.1",
