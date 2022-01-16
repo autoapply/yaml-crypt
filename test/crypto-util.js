@@ -18,7 +18,7 @@ function setupCrypto() {
 }
 
 function decryptBranca(key, msg) {
-  return branca(key).decode(msg).toString();
+  return branca(Buffer.from(key)).decode(msg).toString();
 }
 
 module.exports = { setupCrypto, decryptBranca };
