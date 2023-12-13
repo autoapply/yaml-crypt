@@ -1,6 +1,5 @@
 # yaml-crypt
 
-[![Build Status](https://img.shields.io/travis/autoapply/yaml-crypt.svg?style=flat-square)](https://travis-ci.org/autoapply/yaml-crypt)
 [![Coverage status](https://img.shields.io/coveralls/github/autoapply/yaml-crypt.svg?style=flat-square)](https://coveralls.io/github/autoapply/yaml-crypt)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
@@ -19,10 +18,6 @@ You can also install the package locally:
     $ yarn init --yes
     $ yarn add yaml-crypt
     $ ./node_modules/.bin/yaml-crypt -h
-
-You can also use the [Docker image](https://hub.docker.com/r/autoapply/yaml-crypt/):
-
-    $ docker run --rm autoapply/yaml-crypt -h
 
 ## Usage
 
