@@ -345,8 +345,8 @@ function _run(args, config, options) {
   const encryptionKey = args.K
     ? readKey(configKeys, args.K)
     : keys.length === 1
-    ? keys[0]
-    : null;
+      ? keys[0]
+      : null;
   if (args.generate_key) {
     const key = generateKey(algorithm);
     output.write(key);
